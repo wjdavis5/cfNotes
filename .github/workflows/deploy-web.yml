@@ -49,7 +49,3 @@ jobs:
           # wranglerVersion: '3'
           # If you want a specific route to access your SPA for any path
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-env:
-  # Add any environment variables needed for the build process
-  # NODE_ENV: production 
