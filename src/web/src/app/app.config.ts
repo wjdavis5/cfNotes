@@ -17,18 +17,26 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(
       QuillModule.forRoot({
         modules: {
-          syntax: true,
+          syntax: false,
           toolbar: [
             ['bold', 'italic', 'underline', 'strike'],
             ['blockquote', 'code-block'],
-            [{ 'header': 1 }, { 'header': 2 }],
+            [{ 'header': [1, 2, 3, false] }],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],
             [{ 'indent': '-1'}, { 'indent': '+1' }],
             ['link', 'image'],
             ['clean']
           ]
-        }
+        },
+        theme: 'snow',
+        debug: 'error',
+        bounds: 'document.body',
+        formats: [
+          'bold', 'italic', 'underline', 'strike',
+          'blockquote', 'code-block',
+          'header', 'list', 'indent',
+          'link', 'image'
+        ]
       })
     )
   ]

@@ -1,4 +1,12 @@
-import { Component, Input, Output, EventEmitter, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  inject,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ViewEncapsulation,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../services/theme.service';
@@ -19,6 +27,7 @@ interface PlainNote {
   standalone: true,
   imports: [CommonModule, FormsModule, QuillModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  encapsulation: ViewEncapsulation.None, // Important to allow Quill styles to work properly
   template: `
     <div class="editor-container">
       <!-- Title input -->
@@ -29,9 +38,12 @@ interface PlainNote {
         placeholder="Untitled Note"
         class="title-input"
         [ngClass]="{
-          'bg-light-bg border-light-secondary focus:border-light-accent': currentTheme === Theme.LIGHT,
-          'bg-dark-bg border-dark-secondary focus:border-dark-accent': currentTheme === Theme.DARK,
-          'bg-sepia-bg border-sepia-secondary focus:border-sepia-accent': currentTheme === Theme.SEPIA
+          'bg-light-bg border-light-secondary focus:border-light-accent':
+            currentTheme === Theme.LIGHT,
+          'bg-dark-bg border-dark-secondary focus:border-dark-accent':
+            currentTheme === Theme.DARK,
+          'bg-sepia-bg border-sepia-secondary focus:border-sepia-accent':
+            currentTheme === Theme.SEPIA
         }"
       />
 
@@ -39,9 +51,10 @@ interface PlainNote {
       <quill-editor
         [(ngModel)]="content"
         (onContentChanged)="onContentChange()"
-        [style]="{height: '400px'}"
+        [style]="{ height: '400px' }"
         [placeholder]="'Start typing...'"
         [modules]="quillModules"
+        theme="snow"
         [ngClass]="{
           'quill-light-theme': currentTheme === Theme.LIGHT,
           'quill-dark-theme': currentTheme === Theme.DARK,
@@ -50,9 +63,7 @@ interface PlainNote {
       ></quill-editor>
 
       <!-- Word count indicator -->
-      <div class="word-count">
-        {{ getWordCount() }} words
-      </div>
+      <div class="word-count">{{ getWordCount() }} words</div>
     </div>
   `,
   styles: `
@@ -80,6 +91,10 @@ interface PlainNote {
       outline: none;
       width: 100%;
       transition: border-color 0.2s;
+      background-color: color-mix(in srgb, var(--card-bg), white 20%);
+      color: var(--light-text);
+
+
     }
 
     .word-count {
@@ -93,8 +108,15 @@ interface PlainNote {
     /* Light theme */
     .quill-light-theme {
       --quill-bg-color: var(--light-bg);
+      --quill-toolbar-bg-color: #f8f9fa;
       --quill-text-color: var(--light-text);
+      --quill-toolbar-text-color: #333333;
       --quill-border-color: var(--light-secondary);
+
+      .ql-toolbar {
+        background-color: color-mix(in srgb, var(--light-bg), white 20%);
+        color: var(--light-text);
+      }
     }
 
     /* Dark theme */
@@ -102,59 +124,121 @@ interface PlainNote {
       --quill-bg-color: var(--dark-bg);
       --quill-text-color: var(--dark-text);
       --quill-border-color: var(--dark-secondary);
+
+      .ql-toolbar {
+        background-color: color-mix(in srgb, var(--dark-bg), white 20%);
+        color: white;
+      }
+
     }
 
     /* Sepia theme */
     .quill-sepia-theme {
       --quill-bg-color: var(--sepia-bg);
+      --quill-toolbar-bg-color: #f3efe5;
       --quill-text-color: var(--sepia-text);
+      --quill-toolbar-text-color: #4b3621;
       --quill-border-color: var(--sepia-secondary);
+
+      .ql-toolbar {
+        background-color: color-mix(in srgb, var(--dark-bg), white 20%);
+        color: white;
+      }
     }
 
     /* Apply theme to Quill editor */
     :host ::ng-deep .ql-container {
-      background-color: var(--quill-bg-color);
-      color: var(--quill-text-color);
+      background-color: var(--quill-bg-color) !important;
+      color: var(--quill-text-color) !important;
       border-color: var(--quill-border-color) !important;
       font-family: inherit;
     }
 
-    :host ::ng-deep .ql-toolbar {
-      background-color: var(--quill-bg-color);
-      color: var(--quill-text-color);
+    :host ::ng-deep .ql-toolbar.ql-snow {
+      background-color: var(--quill-toolbar-bg-color) !important;
+      color: var(--quill-toolbar-text-color) !important;
       border-color: var(--quill-border-color) !important;
     }
 
-    :host ::ng-deep .ql-toolbar button,
-    :host ::ng-deep .ql-toolbar .ql-picker {
-      color: var(--quill-text-color);
-    }
-
-    :host ::ng-deep .ql-toolbar button:hover,
-    :host ::ng-deep .ql-toolbar button.ql-active {
-      color: var(--quill-text-color);
+    /* Fix button styling */
+    :host ::ng-deep .ql-snow .ql-toolbar button,
+    :host ::ng-deep .ql-snow .ql-toolbar button.ql-active,
+    :host ::ng-deep .ql-snow .ql-toolbar .ql-picker-label.ql-active {
+      color: var(--quill-toolbar-text-color) !important;
     }
 
     :host ::ng-deep .ql-toolbar button .ql-stroke,
     :host ::ng-deep .ql-toolbar .ql-picker-label .ql-stroke {
-      stroke: var(--quill-text-color);
+      stroke: var(--quill-toolbar-text-color) !important;
     }
 
     :host ::ng-deep .ql-toolbar button:hover .ql-stroke,
-    :host ::ng-deep .ql-toolbar button.ql-active .ql-stroke {
-      stroke: var(--quill-text-color);
+    :host ::ng-deep .ql-toolbar button.ql-active .ql-stroke,
+    :host ::ng-deep .ql-toolbar .ql-picker-label.ql-active .ql-stroke {
+      stroke: var(--quill-toolbar-text-color) !important;
     }
 
     :host ::ng-deep .ql-toolbar button .ql-fill,
     :host ::ng-deep .ql-toolbar .ql-picker-label .ql-fill {
-      fill: var(--quill-text-color);
+      fill: var(--quill-toolbar-text-color) !important;
     }
 
     :host ::ng-deep .ql-toolbar button:hover .ql-fill,
     :host ::ng-deep .ql-toolbar button.ql-active .ql-fill {
-      fill: var(--quill-text-color);
+      fill: var(--quill-toolbar-text-color) !important;
     }
-  `
+
+    /* Make dark theme more visible */
+    .quill-dark-theme ::ng-deep .ql-toolbar.ql-snow {
+      background-color: #3a4d6d !important;
+    }
+
+    .quill-dark-theme ::ng-deep .ql-container.ql-snow {
+      background-color: #263247 !important;
+    }
+
+    .quill-dark-theme ::ng-deep .ql-toolbar .ql-stroke {
+      stroke: #ffffff !important;
+    }
+
+    .quill-dark-theme ::ng-deep .ql-toolbar .ql-fill {
+      fill: #ffffff !important;
+    }
+
+    .quill-dark-theme ::ng-deep .ql-toolbar button {
+      color: #ffffff !important;
+    }
+
+    /* Ensure the toolbar buttons are properly visible */
+    :host ::ng-deep .ql-formats {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 15px;
+    }
+
+    :host ::ng-deep .ql-toolbar button {
+      padding: 3px 5px;
+      height: 28px;
+      width: 28px;
+      display: inline-block;
+    }
+
+    :host ::ng-deep .ql-toolbar button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Add hover effects for better interaction */
+    :host ::ng-deep .ql-snow .ql-toolbar button:hover,
+    :host ::ng-deep .ql-snow .ql-toolbar button.ql-active {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .quill-dark-theme ::ng-deep .ql-snow .ql-toolbar button:hover,
+    .quill-dark-theme ::ng-deep .ql-snow .ql-toolbar button.ql-active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  `,
 })
 export class NoteEditorComponent {
   private themeService = inject(ThemeService);
@@ -180,15 +264,16 @@ export class NoteEditorComponent {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
       ['blockquote', 'code-block'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ header: [1, 2, 3, false] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ indent: '-1' }, { indent: '+1' }],
       ['link', 'image'],
-      ['clean']
-    ]
+      ['clean'],
+    ],
   };
 
   constructor() {
-    this.themeService.currentTheme$.subscribe(theme => {
+    this.themeService.currentTheme$.subscribe((theme) => {
       this.currentTheme = theme;
     });
   }
@@ -199,8 +284,9 @@ export class NoteEditorComponent {
   onTitleChange(): void {
     if (!this._note) return;
 
+    console.log('Title changed:', this.title);
     this.emitChange({
-      title: this.title
+      title: this.title,
     });
   }
 
@@ -210,8 +296,9 @@ export class NoteEditorComponent {
   onContentChange(): void {
     if (!this._note) return;
 
+    console.log('Content changed:', this.content);
     this.emitChange({
-      content: this.content
+      content: this.content,
     });
   }
 
@@ -234,9 +321,10 @@ export class NoteEditorComponent {
    * Emit note changes to parent component
    */
   private emitChange(changes: Partial<PlainNote>): void {
+    console.log('Emitting changes:', changes);
     this.noteChange.emit({
       id: this._note?.id,
-      ...changes
+      ...changes,
     });
   }
 }

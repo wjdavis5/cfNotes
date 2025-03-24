@@ -91,7 +91,7 @@ interface Note {
       </div>
 
       <div *ngIf="loading" class="flex-grow flex items-center justify-center">
-        <div 
+        <div
           class="animate-spin h-12 w-12 rounded-full border-4"
           [ngClass]="{
             'border-light-accent border-t-transparent': currentTheme === Theme.LIGHT,
