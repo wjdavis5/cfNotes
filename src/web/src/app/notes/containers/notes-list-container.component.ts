@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { NoteCardComponent } from '../../components/note-card.component';
 import { NoteService } from '../../services/note.service';
 import { CryptoService } from '../../services/crypto.service';
@@ -27,8 +27,8 @@ interface PlainNote {
     <!-- Full page container -->
     <div class="notes-container">
       <!-- Debug header - will hide this after final testing -->
-      
-      
+
+
       <!-- Main layout - now with border radius -->
       <div class="main-layout" [ngClass]="{
         'theme-light': currentTheme === Theme.LIGHT,
@@ -38,7 +38,7 @@ interface PlainNote {
         <!-- Left sidebar with border radius -->
         <div class="sidebar">
           <h2 class="sidebar-header">My Notes</h2>
-          
+
           <!-- Theme-aware New Note Button -->
           <button
             class="action-btn new-note-btn"
@@ -51,7 +51,7 @@ interface PlainNote {
           >
             New Note
           </button>
-          
+
           <!-- Fix Notes Button (for migration) -->
           <button
             *ngIf="showFixButton"
@@ -66,20 +66,20 @@ interface PlainNote {
           >
             {{ isFixingNotes ? 'Fixing Notes...' : 'Fix Encryption' }}
           </button>
-          
+
           <!-- Loading State -->
           <div *ngIf="loading" class="loading">
             <span>Loading notes...</span>
           </div>
-          
+
           <!-- Error State -->
           <div *ngIf="error" class="error-message">
             {{ error }}
           </div>
-          
+
           <!-- Notes List -->
           <div *ngIf="!loading && !error && notes.length > 0" class="notes-list">
-            <div *ngFor="let note of notes" 
+            <div *ngFor="let note of notes"
                  class="note-item"
                  (click)="viewNote(note.id)"
                  (keydown.enter)="viewNote(note.id)"
@@ -91,14 +91,14 @@ interface PlainNote {
               <p class="text-xs opacity-70">{{ formatDate(note.updatedAt) }}</p>
             </div>
           </div>
-          
+
           <!-- Empty State -->
           <div *ngIf="!loading && !error && notes.length === 0" class="empty-state">
             <p class="mb-2">No notes yet</p>
             <p class="text-xs opacity-70">Create your first note to get started</p>
           </div>
         </div>
-        
+
         <!-- Main content area with border radius -->
         <div class="content-area" id="content-area">
           <!-- Welcome message when no note selected -->
@@ -106,7 +106,7 @@ interface PlainNote {
             <div class="text-center">
               <h2 class="welcome-header">Welcome to cfNote</h2>
               <p class="welcome-text">Select a note or create a new one to get started</p>
-              
+
               <button
                 *ngIf="notes.length === 0"
                 class="action-btn create-first-btn"
@@ -121,17 +121,17 @@ interface PlainNote {
               </button>
             </div>
           </div>
-          
+
           <!-- Direct note editor component instead of router outlet -->
           <div *ngIf="selectedNoteId && currentNote" class="editor-container">
-            <app-note-editor 
-              [note]="currentNote" 
+            <app-note-editor
+              [note]="currentNote"
               (noteChange)="handleNoteChange($event)">
             </app-note-editor>
           </div>
         </div>
       </div>
-      
+
       <!-- Footer with copyright -->
       <div class="footer" [ngClass]="{
         'footer-light': currentTheme === Theme.LIGHT,
@@ -151,7 +151,7 @@ interface PlainNote {
       height: calc(100vh - 64px); /* Full height minus header */
       gap: 16px;
     }
-    
+
     .debug-header {
       background-color: #ef4444;
       color: white;
@@ -160,7 +160,7 @@ interface PlainNote {
       border-radius: 8px;
       text-align: center;
     }
-    
+
     .main-layout {
       display: flex !important;
       flex-direction: row !important;
@@ -170,25 +170,25 @@ interface PlainNote {
       width: 100%;
       flex: 1;
     }
-    
+
     .theme-light {
       border-color: #d1d5db;
       background-color: #f9fafb;
       color: #111827;
     }
-    
+
     .theme-dark {
       border-color: #4b5563;
       background-color: #1f2937;
       color: #f9fafb;
     }
-    
+
     .theme-sepia {
       border-color: #d6d3d1;
       background-color: #fef3c7;
       color: #78350f;
     }
-    
+
     .sidebar {
       width: 280px !important;
       min-width: 280px !important;
@@ -199,13 +199,13 @@ interface PlainNote {
       flex-direction: column;
       overflow-y: auto;
     }
-    
+
     .sidebar-header {
       font-size: 1.25rem;
       font-weight: bold;
       margin-bottom: 16px;
     }
-    
+
     .content-area {
       flex: 1;
       padding: 24px;
@@ -213,7 +213,7 @@ interface PlainNote {
       flex-direction: column;
       overflow-y: auto;
     }
-    
+
     .action-btn {
       width: 100%;
       margin-bottom: 16px;
@@ -224,41 +224,41 @@ interface PlainNote {
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    
+
     .new-note-btn {
       margin-bottom: 20px;
     }
-    
+
     .btn-light {
       background-color: #3b82f6;
     }
-    
+
     .btn-light:hover {
       background-color: #2563eb;
     }
-    
+
     .btn-dark {
       background-color: #60a5fa;
     }
-    
+
     .btn-dark:hover {
       background-color: #3b82f6;
     }
-    
+
     .btn-sepia {
       background-color: #b45309;
     }
-    
+
     .btn-sepia:hover {
       background-color: #92400e;
     }
-    
+
     .loading {
       display: flex;
       justify-content: center;
       padding: 16px 0;
     }
-    
+
     .error-message {
       padding: 12px;
       margin: 12px 0;
@@ -267,12 +267,12 @@ interface PlainNote {
       color: white;
       border: 1px solid #dc2626;
     }
-    
+
     .notes-list {
       overflow-y: auto;
       margin-top: 8px;
     }
-    
+
     .note-item {
       margin-bottom: 12px;
       padding: 12px;
@@ -282,39 +282,39 @@ interface PlainNote {
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
-    
+
     .note-item:hover {
       background-color: rgba(255, 255, 255, 0.1);
     }
-    
+
     .empty-state {
       text-align: center;
       padding: 20px;
     }
-    
+
     .welcome-message {
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100%;
     }
-    
+
     .welcome-header {
       font-size: 1.5rem;
       font-weight: bold;
       margin-bottom: 12px;
     }
-    
+
     .welcome-text {
       margin-bottom: 24px;
     }
-    
+
     .create-first-btn {
       display: inline-block;
       width: auto;
       padding: 12px 24px;
     }
-    
+
     .editor-container {
       flex: 1;
       display: flex;
@@ -323,45 +323,45 @@ interface PlainNote {
       width: 100%;
       overflow: hidden;
     }
-    
+
     app-note-editor {
       flex: 1;
       display: flex;
       height: 100%;
       min-height: 500px;
     }
-    
+
     .footer {
       padding: 12px;
       text-align: center;
       font-size: 0.875rem;
       border-radius: 8px;
     }
-    
+
     .footer-light {
       background-color: #f3f4f6;
       color: #6b7280;
     }
-    
+
     .footer-dark {
       background-color: #374151;
       color: #9ca3af;
     }
-    
+
     .footer-sepia {
       background-color: #fef3c7;
       color: #92400e;
     }
-    
+
     .fix-notes-btn {
       margin-bottom: 16px;
       background-color: #fb923c;
     }
-    
+
     .fix-notes-btn:hover {
       background-color: #f97316;
     }
-    
+
     .fix-notes-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -372,6 +372,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   private noteService = inject(NoteService);
   private cryptoService = inject(CryptoService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private themeService = inject(ThemeService);
   private authService = inject(AuthService);
 
@@ -393,11 +394,12 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('NotesListContainerComponent initialized'); // Debug log
-    this.loadNotes();
+
+    // Set up theme
     this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
-    
+
     // Set up crypto service with user password (in real app, this would be from secure storage)
     // This is a dummy password for demonstration purposes only
     const user = this.authService.getCurrentUser();
@@ -405,10 +407,23 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       // In a real app, this would be from a secure key vault or user input
       this.cryptoService.setPassword('defaultPassword');
     }
-    
+
+    // Load notes first
+    this.loadNotes().then(() => {
+      // After notes are loaded, check for route parameter
+      this.route.paramMap.subscribe(params => {
+        const noteId = params.get('id');
+        if (noteId) {
+          console.log('Note ID from route:', noteId);
+          this.selectedNoteId = noteId;
+          this.loadNoteById(noteId);
+        }
+      });
+    });
+
     // Update URL to reflect current note but don't navigate
     this.updateUrlWithoutNavigation();
-    
+
     // Set up debounced save
     this.saveSubscription = this.noteChangeSubject.pipe(
       debounceTime(1000) // Wait 1 second after changes stop
@@ -430,8 +445,8 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   private updateUrlWithoutNavigation(): void {
     if (this.selectedNoteId) {
       window.history.replaceState(
-        {}, 
-        '', 
+        {},
+        '',
         `/notes/${this.selectedNoteId}`
       );
     }
@@ -447,8 +462,8 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     try {
       // Load encrypted notes
       const encryptedNotes = await this.noteService.loadNotes();
-      console.log('Loaded encrypted notes:', encryptedNotes.length); 
-      
+      console.log('Loaded encrypted notes:', encryptedNotes.length);
+
       // Debug the structure of the first note if available
       if (encryptedNotes.length > 0) {
         const sampleNote = encryptedNotes[0];
@@ -459,7 +474,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
           hasSalt: !!sampleNote.salt,
           encryptedContentLength: sampleNote.encryptedContent?.length || 0
         });
-        
+
         // Show fix button if any note is missing salt
         this.showFixButton = encryptedNotes.some(note => !note.salt);
       }
@@ -481,7 +496,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       try {
         this.notes = await this.cryptoService.decryptNotes(encryptedNotes);
         console.log('Successfully decrypted notes:', this.notes.length);
-        
+
         // Check how many notes were successfully decrypted vs failed
         const failedNotes = this.notes.filter(note => note.content === 'Unable to decrypt content').length;
         if (failedNotes > 0) {
@@ -492,7 +507,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
         }
       } catch (decryptError) {
         console.error('Error during note decryption:', decryptError);
-        
+
         // Show partially decrypted notes if possible
         if (this.notes.length > 0) {
           this.error = 'Error decrypting notes. Some notes may not be readable.';
@@ -522,16 +537,16 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
         this.currentNote = note;
         return;
       }
-      
+
       console.debug(`Note ${noteId} not found in loaded notes, fetching from API`);
       // If note not found in current list, try to fetch it from the API
       const fetchedNote = await this.noteService.getNote(noteId);
-      
+
       if (!fetchedNote) {
         console.error(`Note ${noteId} not found in API`);
         throw new Error('Note not found');
       }
-      
+
       console.debug(`Retrieved note ${noteId} from API, attempting to decrypt`);
       // Log the structure of the fetched note
       console.debug('Fetched note structure:', {
@@ -541,14 +556,14 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
         hasSalt: !!fetchedNote.salt,
         encryptedContentLength: fetchedNote.encryptedContent?.length || 0
       });
-      
+
       // Ensure we have a password set
       if (!this.cryptoService.hasPassword()) {
         console.warn('No crypto password set, setting default password');
         // For demo purposes - in a real app this would come from user input
         this.cryptoService.setPassword('defaultPassword');
       }
-      
+
       try {
         // Attempt to decrypt the note
         this.currentNote = await this.cryptoService.decryptNote(fetchedNote);
@@ -563,7 +578,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
           createdAt: fetchedNote.createdAt,
           updatedAt: fetchedNote.updatedAt
         };
-        
+
         // Show an error message
         this.error = 'Could not decrypt note content. It may have been encrypted with a different password.';
         setTimeout(() => this.error = null, 5000);
@@ -627,7 +642,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       ? `${textContent.substring(0, 100)}...`
       : textContent;
   }
-  
+
   /**
    * Get word count
    */
@@ -635,10 +650,10 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     if (!note.content) {
       return 0;
     }
-    
+
     // Strip HTML tags for accurate word count
     const textContent = note.content.replace(/<[^>]*>/g, '');
-    
+
     // Count words by splitting on whitespace
     return textContent.trim().split(/\s+/).filter(Boolean).length;
   }
@@ -661,12 +676,12 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
 
     // Add to notes list
     this.notes = [newNote, ...this.notes];
-    
+
     // Set as current note
     this.noteService.setCurrentNote(newNote);
     this.selectedNoteId = tempId;
     this.currentNote = newNote;
-    
+
     // Update URL without navigation
     this.updateUrlWithoutNavigation();
   }
@@ -676,23 +691,23 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
    */
   handleNoteChange(noteChanges: Partial<PlainNote>): void {
     if (!noteChanges.id || !this.currentNote) return;
-    
+
     // Update the current note
     this.currentNote = {
       ...this.currentNote,
       ...noteChanges,
       updatedAt: new Date().toISOString()
     };
-    
+
     // Update in the notes list
-    this.notes = this.notes.map(note => 
+    this.notes = this.notes.map(note =>
       note.id === this.currentNote?.id ? this.currentNote : note
     );
-    
+
     // Queue debounced save
     this.noteChangeSubject.next(this.currentNote);
   }
-  
+
   /**
    * Save note changes (debounced version)
    */
@@ -700,14 +715,14 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     try {
       // First, we need to determine if this is a new note or an existing one
       const isNewNote = !this.notes.some(n => n.id === note.id && n !== this.currentNote);
-      
+
       // Ensure content is set, defaulting to empty string if undefined
       const content = note.content || '';
-      
+
       // Check if CryptoService has a password set
       if (!this.cryptoService.hasPassword()) {
         console.warn('No password set in CryptoService, using plain text storage');
-        
+
         // Fall back to unencrypted storage but include ALL required fields
         if (isNewNote) {
           await this.noteService.createNote({
@@ -732,16 +747,16 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
         }
         return;
       }
-      
+
       // Actually encrypt the note using CryptoService
       const encryptedNote = await this.cryptoService.encryptNote(note);
-      
+
       // Check that all required fields are present to avoid decryption issues
       if (!encryptedNote.salt) {
         console.error('Missing salt in encrypted note - this will cause decryption to fail');
         throw new Error('Missing required encryption fields');
       }
-      
+
       if (isNewNote) {
         // Create a new note with properly encrypted content
         await this.noteService.createNote({
@@ -797,12 +812,12 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     try {
       await this.noteService.deleteNote(noteId);
       this.notes = this.notes.filter(note => note.id !== noteId);
-      
+
       // If the deleted note was selected, clear selection
       if (this.selectedNoteId === noteId) {
         this.selectedNoteId = null;
         this.currentNote = null;
-        
+
         // Update URL
         window.history.replaceState({}, '', '/notes');
       }
@@ -819,14 +834,14 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
    */
   async fixNotes(): Promise<void> {
     if (this.isFixingNotes) return;
-    
+
     this.isFixingNotes = true;
     this.error = null;
-    
+
     try {
       const result = await this.noteService.fixNotes();
       console.log('Fix notes result:', result);
-      
+
       if (result.stats.fixed > 0) {
         // Show success message
         this.error = `Successfully fixed ${result.stats.fixed} notes. Reloading...`;
@@ -839,7 +854,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
         this.error = 'No notes needed fixing';
         setTimeout(() => this.error = null, 3000);
       }
-      
+
       // Hide the fix button if no more notes need fixing
       if (result.stats.fixed > 0 && result.stats.failed === 0) {
         this.showFixButton = false;
