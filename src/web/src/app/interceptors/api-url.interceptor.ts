@@ -20,9 +20,9 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   // Get base API URL from environment service (without trailing slash)
   const apiBaseUrl = environmentService.getApiBaseUrl().replace(/\/$/, '');
 
-  // Create the new URL by replacing the /api prefix with the full API base URL
-  const apiPath = req.url.substring(4); // Remove '/api' prefix
-  const newUrl = `${apiBaseUrl}${apiPath.startsWith('/') ? '' : '/'}${apiPath}`;
+  // Create the new URL by replacing the initial slash with the base URL
+  // but KEEP the /api prefix in the path
+  const newUrl = `${apiBaseUrl}${req.url}`;
 
   // Clone the request with the new URL
   const apiReq = req.clone({
