@@ -40,7 +40,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: cfnote
-          directory: src/dist/web
+          directory: src/dist/web/browser
           # Optional: Add custom domain
           # customDomain: cfnote.yourdomain.com
           # Optional: Branch name for deployment
