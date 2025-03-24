@@ -46,6 +46,6 @@ jobs:
           # Optional: Branch name for deployment
           branch: main
           # Optional: Additional configuration options
-          # wranglerVersion: '3'
+          wranglerVersion: '4'
           # If you want a specific route to access your SPA for any path
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
