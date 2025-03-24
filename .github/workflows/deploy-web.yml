@@ -1,0 +1,55 @@
+name: Deploy Web (Cloudflare Pages)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/web/**'
+      - 'src/common/**'
+      - 'src/crypto/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'src/package-lock.json'
+      
+      - name: Install Dependencies
+        working-directory: src
+        run: npm ci
+      
+      - name: Build Angular App
+        working-directory: src
+        run: npx nx build web --configuration=production
+      
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: cfnote
+          directory: dist/web/browser
+          # Optional: Add custom domain
+          # customDomain: cfnote.yourdomain.com
+          # Optional: Branch name for deployment
+          branch: main
+          # Optional: Additional configuration options
+          # wranglerVersion: '3'
+          # If you want a specific route to access your SPA for any path
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+env:
+  # Add any environment variables needed for the build process
+  # NODE_ENV: production 

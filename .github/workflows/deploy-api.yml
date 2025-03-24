@@ -1,0 +1,48 @@
+name: Deploy API (Cloudflare Worker)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/api
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'src/api/package-lock.json'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: 'src/api'
+          command: deploy
+          # Optional: Replace with your production KV namespace ID in wrangler.toml
+          # args: --env production
+
+env:
+  # These environment variables can be used by the worker if needed
+  # NODE_ENV: production
+  # Add any other environment variables needed by your worker 
