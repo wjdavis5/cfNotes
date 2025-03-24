@@ -48,4 +48,4 @@ jobs:
           # Optional: Additional configuration options
           wranglerVersion: '4'
           # If you want a specific route to access your SPA for any path
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          
