@@ -10,10 +10,10 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class EnvironmentService {
-  // Cloudflare production API URL
+  // Cloudflare production API URL (without trailing slash)
   private readonly PROD_API_URL = 'https://cfnote-api.wjd5.workers.dev';
 
-  // Development API URL (for local development)
+  // Development API URL (without trailing slash)
   private readonly DEV_API_URL = 'http://127.0.0.1:8787';
 
   /**

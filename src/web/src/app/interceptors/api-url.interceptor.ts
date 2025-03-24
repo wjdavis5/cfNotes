@@ -9,7 +9,7 @@ import { EnvironmentService } from '../services/environment.service';
  * and local development server in development
  */
 export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
-  // Only intercept requests to /api
+  // Only intercept API requests
   if (!req.url.startsWith('/api')) {
     return next(req);
   }
@@ -17,17 +17,21 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   // Get environment service
   const environmentService = inject(EnvironmentService);
 
-  // Get API URL from environment service
-  const apiUrl = environmentService.getApiBaseUrl();
+  // Get base API URL from environment service (without trailing slash)
+  const apiBaseUrl = environmentService.getApiBaseUrl().replace(/\/$/, '');
 
-  // Create a new URL by replacing /api with the actual API URL
+  // Create the new URL by replacing the /api prefix with the full API base URL
+  const apiPath = req.url.substring(4); // Remove '/api' prefix
+  const newUrl = `${apiBaseUrl}${apiPath.startsWith('/') ? '' : '/'}${apiPath}`;
+
+  // Clone the request with the new URL
   const apiReq = req.clone({
-    url: req.url.replace('/api', apiUrl)
+    url: newUrl
   });
 
   // Log the URL transformation in development
   if (!environmentService.isProduction()) {
-    console.debug(`API request: ${req.url} -> ${apiReq.url}`);
+    console.debug(`API request transform: ${req.url} -> ${apiReq.url}`);
   }
 
   return next(apiReq);
