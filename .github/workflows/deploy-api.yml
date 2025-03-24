@@ -41,8 +41,3 @@ jobs:
           command: deploy
           # Optional: Replace with your production KV namespace ID in wrangler.toml
           # args: --env production
-
-env:
-  # These environment variables can be used by the worker if needed
-  # NODE_ENV: production
-  # Add any other environment variables needed by your worker 
