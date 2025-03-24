@@ -1,0 +1,164 @@
+/* You can add global styles to this file, and also import other style files */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles based on themes */
+:root {
+  color-scheme: light;
+}
+
+:root.light-theme {
+  @apply bg-light-bg text-light-text;
+  color-scheme: light;
+  --text-color: theme('colors.light-text');
+  --bg-color: theme('colors.light-bg');
+  --accent-color: theme('colors.light-accent');
+}
+
+:root.dark-theme {
+  @apply bg-dark-bg text-dark-text;
+  color-scheme: dark;
+  --text-color: theme('colors.dark-text');
+  --bg-color: theme('colors.dark-bg');
+  --accent-color: theme('colors.dark-accent');
+}
+
+:root.sepia-theme {
+  @apply bg-sepia-bg text-sepia-text;
+  color-scheme: light;
+  --text-color: theme('colors.sepia-text');
+  --bg-color: theme('colors.sepia-bg');
+  --accent-color: theme('colors.sepia-accent');
+}
+
+/* Global styles */
+html, body {
+  @apply h-full m-0 p-0;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  @apply antialiased;
+  /* Set minimum height for mobile browsers */
+  min-height: 100vh;
+  /* Fix iOS height issues */
+  min-height: -webkit-fill-available;
+}
+
+/* Fix for mobile Safari */
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+body.light-theme {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+body.dark-theme {
+  background-color: #1e293b;
+  color: #f3f4f6;
+}
+
+body.sepia-theme {
+  background-color: #f8f4e8;
+  color: #4b3621;
+}
+
+/* Theme text helper classes */
+.dark-theme-text {
+  color: #f3f4f6;
+}
+
+.dark-theme-bg {
+  background-color: #1e293b;
+}
+
+.dark-theme-accent {
+  color: #60a5fa;
+}
+
+.sepia-theme-text {
+  color: #4b3621;
+}
+
+.sepia-theme-bg {
+  background-color: #f8f4e8;
+}
+
+.sepia-theme-accent {
+  color: #8b5a2b;
+}
+
+/* Custom theme-specific classes */
+@layer utilities {
+  /* Button focus styles */
+  button:focus {
+    @apply outline-none ring-2 ring-offset-2 ring-light-accent;
+  }
+
+  .dark-theme button:focus {
+    @apply ring-dark-accent;
+  }
+
+  .sepia-theme button:focus {
+    @apply ring-sepia-accent;
+  }
+
+  /* Input focus styles */
+  input:focus {
+    @apply outline-none ring-2 ring-light-accent border-transparent;
+  }
+
+  .dark-theme input:focus {
+    @apply ring-dark-accent;
+  }
+
+  .sepia-theme input:focus {
+    @apply ring-sepia-accent;
+  }
+}
+
+/* Custom transition styles */
+.custom-transition-all {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Ensure color theme transitions are smooth */
+* {
+  @apply transition-colors duration-300;
+}
+
+/* Card and form element styles */
+.form-card {
+  @apply bg-white dark:bg-gray-800 sepia:bg-sepia-bg;
+  @apply shadow-lg rounded-lg p-6;
+  @apply transition-all duration-300;
+}
+
+.form-input {
+  @apply w-full px-4 py-2 rounded-md;
+  @apply border border-gray-300 dark:border-gray-600 sepia:border-sepia-text/30;
+  @apply bg-white dark:bg-gray-700 sepia:bg-sepia-secondary;
+  @apply focus:outline-none focus:ring-2 focus:border-transparent;
+  @apply transition-all duration-200;
+}
+
+.form-button {
+  @apply px-4 py-2 rounded-md;
+  @apply transition-all duration-200;
+  @apply font-medium;
+  @apply flex items-center justify-center;
+}
+
+.note-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

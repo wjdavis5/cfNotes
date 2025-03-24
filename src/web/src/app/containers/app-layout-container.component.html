@@ -1,0 +1,63 @@
+<div class="min-h-screen flex flex-col w-full"
+  [class.light-theme]="currentTheme === Theme.LIGHT"
+  [class.dark-theme]="currentTheme === Theme.DARK"
+  [class.sepia-theme]="currentTheme === Theme.SEPIA">
+  <!-- Header -->
+  <header class="p-2.5 shadow-sm border-b z-10"
+    [ngClass]="{
+      'bg-light-bg text-light-text border-light-secondary': currentTheme === Theme.LIGHT,
+      'bg-dark-bg text-dark-text border-dark-secondary': currentTheme === Theme.DARK,
+      'bg-sepia-bg text-sepia-text border-sepia-secondary': currentTheme === Theme.SEPIA
+    }">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold"
+        [ngClass]="{
+          'text-light-accent': currentTheme === Theme.LIGHT,
+          'text-dark-accent': currentTheme === Theme.DARK,
+          'text-sepia-accent': currentTheme === Theme.SEPIA
+        }">cfNote</h1>
+
+      <div class="flex items-center space-x-3">
+        <app-theme-selector
+          [currentTheme]="currentTheme"
+          (themeChange)="onThemeChange($event)"
+        ></app-theme-selector>
+
+        <button
+          *ngIf="isAuthenticated"
+          class="text-sm px-3 py-1.5 rounded border transition-colors"
+          [ngClass]="{
+            'border-light-secondary hover:bg-light-secondary text-light-text': currentTheme === Theme.LIGHT,
+            'border-dark-secondary hover:bg-dark-secondary text-dark-text': currentTheme === Theme.DARK,
+            'border-sepia-secondary hover:bg-sepia-secondary text-sepia-text': currentTheme === Theme.SEPIA
+          }"
+          (click)="logout()"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="flex-1 w-full"
+    [ngClass]="{
+      'bg-light-bg text-light-text': currentTheme === Theme.LIGHT,
+      'bg-dark-bg text-dark-text': currentTheme === Theme.DARK,
+      'bg-sepia-bg text-sepia-text': currentTheme === Theme.SEPIA
+    }">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-2 text-center text-xs border-t"
+    [ngClass]="{
+      'border-light-secondary text-light-text/60 bg-light-bg': currentTheme === Theme.LIGHT,
+      'border-dark-secondary text-dark-text/60 bg-dark-bg': currentTheme === Theme.DARK,
+      'border-sepia-secondary text-sepia-text/60 bg-sepia-bg': currentTheme === Theme.SEPIA
+    }">
+    <div class="max-w-5xl mx-auto">
+      <p>cfNote - Secure cloud note taking &copy; 2025</p>
+    </div>
+  </footer>
+</div>

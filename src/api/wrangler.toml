@@ -1,0 +1,13 @@
+name = "cfnote-api"
+main = "src/index.ts"
+compatibility_date = "2023-12-01"
+
+kv_namespaces = [
+  { binding = "NOTES", id = "demo", preview_id = "demo" }
+]
+
+[build]
+command = "npm run build"
+
+[dev]
+port = 8787

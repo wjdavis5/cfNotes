@@ -1,0 +1,12 @@
+:host {
+  display: inline-block;
+}
+
+button {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent-color, #3b82f6);
+  outline-offset: 2px;
+}

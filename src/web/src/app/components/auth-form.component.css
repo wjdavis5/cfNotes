@@ -1,0 +1,19 @@
+/* Add specific styles for auth form */
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

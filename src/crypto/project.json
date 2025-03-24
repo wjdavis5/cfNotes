@@ -1,0 +1,26 @@
+{
+  "name": "crypto",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "crypto/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/crypto",
+        "main": "crypto/src/index.ts",
+        "tsConfig": "crypto/tsconfig.lib.json",
+        "assets": ["crypto/*.md"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "crypto/jest.config.ts"
+      }
+    }
+  }
+}
