@@ -225,6 +225,14 @@ export class NoteService {
   }
 
   /**
+   * Clear all notes data (used during logout)
+   */
+  clearNotes(): void {
+    this.notesSubject.next([]);
+    this.currentNoteSubject.next(null);
+  }
+
+  /**
    * Fix notes that might be missing the salt field
    */
   async fixNotes(): Promise<{

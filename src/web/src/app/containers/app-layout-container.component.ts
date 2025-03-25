@@ -1,10 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ThemeSelectorComponent } from '../components/theme-selector.component';
 import { ThemeService } from '../services/theme.service';
 import { AuthService } from '../services/auth.service';
 import { Theme } from '../models/theme.model';
+import { CryptoService } from '../services/crypto.service';
+import { NoteService } from '../services/note.service';
+import { StorageService } from '../services/storage.service';
 
 @Component({
   selector: 'app-layout-container',
@@ -98,6 +101,10 @@ import { Theme } from '../models/theme.model';
 export class AppLayoutContainerComponent implements OnInit {
   private themeService = inject(ThemeService);
   private authService = inject(AuthService);
+  private router = inject(Router);
+  private cryptoService = inject(CryptoService);
+  private noteService = inject(NoteService);
+  private storageService = inject(StorageService);
 
   currentTheme = Theme.LIGHT;
   isAuthenticated = false;
@@ -129,6 +136,16 @@ export class AppLayoutContainerComponent implements OnInit {
    * Handle logout
    */
   logout(): void {
+    // Clear auth data
     this.authService.logout();
+
+    // Clear crypto password
+    this.cryptoService.clearPassword();
+
+    // Reset note service state
+    this.noteService.clearNotes();
+
+    // Redirect to auth page
+    this.router.navigate(['/auth']);
   }
 }

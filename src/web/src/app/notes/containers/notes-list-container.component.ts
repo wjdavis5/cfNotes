@@ -404,7 +404,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       }
 
       // Load encrypted notes
-      const encryptedNotes = await this.noteService.getNotes();
+      const encryptedNotes = await this.noteService.loadNotes();
 
       // Decrypt notes
       const decryptedNotes: PlainNote[] = [];
@@ -510,27 +510,32 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     return textContent.trim().split(/\s+/).filter(Boolean).length;
   }
 
-  createNewNote(): void {
+  async createNewNote(): Promise<void> {
     const newNote: PlainNote = {
       id: crypto.randomUUID(),
       title: 'Untitled Note',
-      content: '',
+      content: '', // Ensure content is an empty string, not undefined
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Add to local array
-    this.notes = [newNote, ...this.notes];
+    try {
+      // Save to server first
+      await this.saveNoteToServer(newNote);
 
-    // Set as current note
-    this.currentNote = newNote;
-    this.selectedNoteId = newNote.id;
+      // Add to local array
+      this.notes = [newNote, ...this.notes];
 
-    // Update URL
-    this.router.navigate(['/notes', newNote.id]);
+      // Set as current note
+      this.currentNote = newNote;
+      this.selectedNoteId = newNote.id;
 
-    // Save to server
-    this.saveNoteToServer(newNote);
+      // Update URL
+      this.router.navigate(['/notes', newNote.id]);
+    } catch (error) {
+      console.error('Error creating new note:', error);
+      this.error = 'Failed to create new note. Please try again.';
+    }
   }
 
   handleNoteChange(noteChanges: Partial<PlainNote>): void {
@@ -557,8 +562,11 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       // Encrypt the note
       const encryptedNote = await this.cryptoService.encryptNote(note);
 
+      // Check if note exists in the list
+      const existingNote = this.notes.find(n => n.id === note.id);
+
       // Save to the server
-      if (this.notes.find(n => n.id === note.id)) {
+      if (existingNote) {
         // Update existing note
         await this.noteService.updateNote(note.id, encryptedNote);
       } else {

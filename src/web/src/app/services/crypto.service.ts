@@ -5,6 +5,7 @@ import { StorageService } from './storage.service';
 interface Note {
   id: string;
   title: string;
+  content?: string;
   encryptedContent: string;
   iv: string;
   salt: string;
@@ -53,7 +54,7 @@ export class CryptoService {
    */
   setPassword(password: string): void {
     this.password = password;
-    
+
     // Store password in storage for persistence
     try {
       this.storageService.set(this.PASSWORD_KEY, password);
@@ -144,6 +145,7 @@ export class CryptoService {
       return {
         id: plainNote.id,
         title: plainNote.title,
+        content: "",
         encryptedContent,
         iv: ivString,
         salt: saltString,
@@ -168,29 +170,29 @@ export class CryptoService {
     try {
       console.debug(`Attempting to decrypt note ${note.id}`);
       console.debug(`IV length: ${note.iv?.length || 0}, EncryptedContent length: ${note.encryptedContent?.length || 0}, Salt length: ${note.salt?.length || 0}`);
-      
+
       // Verify necessary fields
       if (!note.encryptedContent) {
         console.error(`Missing encryptedContent for decryption of note ${note.id}`);
         throw new Error('Missing required fields for decryption');
       }
-      
+
       if (!note.iv) {
         console.error(`Missing IV for decryption of note ${note.id}`);
         throw new Error('Missing required fields for decryption');
       }
-      
+
       if (!note.salt) {
         console.error(`Missing salt for decryption of note ${note.id}`);
         throw new Error('Missing required fields for decryption');
       }
-      
+
       // After individual checks, provide a clearer error message if multiple fields are missing
       const missingFields = [];
       if (!note.encryptedContent) missingFields.push('encryptedContent');
       if (!note.iv) missingFields.push('iv');
       if (!note.salt) missingFields.push('salt');
-      
+
       if (missingFields.length > 0) {
         const errorMsg = `Missing required fields for decryption: ${missingFields.join(', ')}`;
         console.error(errorMsg);
@@ -201,7 +203,7 @@ export class CryptoService {
       const encryptedData = this.base64ToBuffer(note.encryptedContent);
       const iv = this.base64ToBuffer(note.iv);
       const salt = this.base64ToBuffer(note.salt);
-      
+
       console.debug('Successfully converted Base64 data to buffers');
       console.debug(`Buffer lengths - encryptedData: ${encryptedData.length}, iv: ${iv.length}, salt: ${salt.length}`);
 

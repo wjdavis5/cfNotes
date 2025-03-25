@@ -13,7 +13,7 @@ const notesRoutes = new Hono<{ Bindings: Env }>();
 const noteSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1),
-  content: z.string(),
+  content: z.string().optional(),
   encryptedContent: z.string(),
   iv: z.string(),
   salt: z.string(),
@@ -102,7 +102,7 @@ notesRoutes.get('/:userHash/:noteId', async (c) => {
 notesRoutes.post('/:userHash', zValidator('json', noteSchema), async (c) => {
   const userHash = c.req.param('userHash');
   console.debug(`[POST] Creating new note for user: ${userHash}`);
-  
+
   try {
     const noteData = await c.req.json();
     console.debug(`[POST] Received note data:`, JSON.stringify({
@@ -186,7 +186,7 @@ notesRoutes.put('/:userHash/:noteId', zValidator('json', noteSchema), async (c) 
       updatedAt: currentNote.updatedAt,
       hasSalt: !!currentNote.salt
     }));
-    
+
     const updatedNote = {
       ...currentNote,
       title: noteData.title,
@@ -239,55 +239,55 @@ notesRoutes.delete('/:userHash/:noteId', async (c) => {
 notesRoutes.post('/:userHash/fix-notes', async (c) => {
   const userHash = c.req.param('userHash');
   console.debug(`[MIGRATION] Fixing notes for user: ${userHash}`);
-  
+
   try {
     if (!userHash) {
       return c.json({ error: 'User hash is required' }, 400);
     }
-    
+
     // List all notes for this user
     const prefix = `note:${userHash}:`;
     console.debug(`[MIGRATION] Listing notes with prefix: ${prefix}`);
     const keys = await c.env.NOTES.list({ prefix });
     console.debug(`[MIGRATION] Found ${keys.keys.length} notes`);
-    
+
     // Track fixed notes
     const fixedNotes = [];
     const alreadyValid = [];
     const failedFixes = [];
-    
+
     // Process each note
     for (const key of keys.keys) {
       console.debug(`[MIGRATION] Processing note with key: ${key.name}`);
       const noteJson = await c.env.NOTES.get(key.name);
-      
+
       if (!noteJson) {
         console.debug(`[MIGRATION] Note not found for key: ${key.name}`);
         failedFixes.push({ key: key.name, reason: 'Not found' });
         continue;
       }
-      
+
       const note = JSON.parse(noteJson);
-      
+
       // Check if salt is missing
       if (note.salt) {
         console.debug(`[MIGRATION] Note already has salt: ${key.name}`);
         alreadyValid.push(note.id);
         continue;
       }
-      
+
       // Add a default salt if missing
       console.debug(`[MIGRATION] Adding salt to note: ${key.name}`);
       note.salt = 'migrated-salt-' + crypto.randomUUID().slice(0, 8);
-      
+
       // Save the updated note
       await c.env.NOTES.put(key.name, JSON.stringify(note));
       console.debug(`[MIGRATION] Fixed note: ${key.name}`);
       fixedNotes.push(note.id);
     }
-    
-    return c.json({ 
-      success: true, 
+
+    return c.json({
+      success: true,
       stats: {
         total: keys.keys.length,
         fixed: fixedNotes.length,

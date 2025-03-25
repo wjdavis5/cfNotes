@@ -9,6 +9,7 @@
 export interface Note {
   id: string;
   title: string;
+  content?: string;
   encryptedContent: string;
   iv: string;
   salt: string;
