@@ -5,7 +5,7 @@ import { NoteCardComponent } from '../../components/note-card.component';
 import { NoteService } from '../../services/note.service';
 import { CryptoService } from '../../services/crypto.service';
 import { ThemeService } from '../../services/theme.service';
-import { Theme } from '../../components/theme-selector.component';
+import { Theme } from '../../models/theme.model';
 import { NoteEditorComponent } from '../../components/note-editor.component';
 import { Subject, Subscription, debounceTime } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -26,28 +26,16 @@ interface PlainNote {
   template: `
     <!-- Full page container -->
     <div class="notes-container">
-      <!-- Debug header - will hide this after final testing -->
-
-
-      <!-- Main layout - now with border radius -->
-      <div class="main-layout" [ngClass]="{
-        'theme-light': currentTheme === Theme.LIGHT,
-        'theme-dark': currentTheme === Theme.DARK,
-        'theme-sepia': currentTheme === Theme.SEPIA
-      }">
-        <!-- Left sidebar with border radius -->
+      <!-- Main layout with themed styling -->
+      <div class="main-layout">
+        <!-- Left sidebar -->
         <div class="sidebar">
           <h2 class="sidebar-header">My Notes</h2>
 
-          <!-- Theme-aware New Note Button -->
+          <!-- New Note Button -->
           <button
             class="action-btn new-note-btn"
             (click)="createNewNote()"
-            [ngClass]="{
-              'btn-light': currentTheme === Theme.LIGHT,
-              'btn-dark': currentTheme === Theme.DARK,
-              'btn-sepia': currentTheme === Theme.SEPIA
-            }"
           >
             New Note
           </button>
@@ -57,11 +45,6 @@ interface PlainNote {
             *ngIf="showFixButton"
             class="action-btn fix-notes-btn"
             (click)="fixNotes()"
-            [ngClass]="{
-              'btn-light': currentTheme === Theme.LIGHT,
-              'btn-dark': currentTheme === Theme.DARK,
-              'btn-sepia': currentTheme === Theme.SEPIA
-            }"
             [disabled]="isFixingNotes"
           >
             {{ isFixingNotes ? 'Fixing Notes...' : 'Fix Encryption' }}
@@ -86,24 +69,25 @@ interface PlainNote {
                  (keydown.space)="viewNote(note.id)"
                  tabindex="0"
                  role="button"
+                 [attr.aria-label]="'View note: ' + (note.title || 'Untitled Note')"
             >
-              <p class="font-medium">{{ note.title || 'Untitled Note' }}</p>
-              <p class="text-xs opacity-70">{{ formatDate(note.updatedAt) }}</p>
+              <p class="note-title">{{ note.title || 'Untitled Note' }}</p>
+              <p class="note-date">{{ formatDate(note.updatedAt) }}</p>
             </div>
           </div>
 
           <!-- Empty State -->
           <div *ngIf="!loading && !error && notes.length === 0" class="empty-state">
-            <p class="mb-2">No notes yet</p>
-            <p class="text-xs opacity-70">Create your first note to get started</p>
+            <p class="empty-title">No notes yet</p>
+            <p class="empty-subtitle">Create your first note to get started</p>
           </div>
         </div>
 
-        <!-- Main content area with border radius -->
+        <!-- Main content area -->
         <div class="content-area" id="content-area">
           <!-- Welcome message when no note selected -->
           <div *ngIf="!selectedNoteId" class="welcome-message">
-            <div class="text-center">
+            <div class="welcome-content">
               <h2 class="welcome-header">Welcome to cfNote</h2>
               <p class="welcome-text">Select a note or create a new one to get started</p>
 
@@ -111,11 +95,6 @@ interface PlainNote {
                 *ngIf="notes.length === 0"
                 class="action-btn create-first-btn"
                 (click)="createNewNote()"
-                [ngClass]="{
-                  'btn-light': currentTheme === Theme.LIGHT,
-                  'btn-dark': currentTheme === Theme.DARK,
-                  'btn-sepia': currentTheme === Theme.SEPIA
-                }"
               >
                 Create First Note
               </button>
@@ -133,16 +112,18 @@ interface PlainNote {
       </div>
 
       <!-- Footer with copyright -->
-      <div class="footer" [ngClass]="{
-        'footer-light': currentTheme === Theme.LIGHT,
-        'footer-dark': currentTheme === Theme.DARK,
-        'footer-sepia': currentTheme === Theme.SEPIA
-      }">
+      <div class="footer">
         <span>cfNote - Secure cloud note taking © 2025</span>
       </div>
     </div>
   `,
   styles: `
+    :host {
+      display: block;
+      height: 100%;
+      width: 100%;
+    }
+
     .notes-container {
       padding: 16px;
       display: flex;
@@ -150,60 +131,37 @@ interface PlainNote {
       width: 100%;
       height: calc(100vh - 64px); /* Full height minus header */
       gap: 16px;
-    }
-
-    .debug-header {
-      background-color: #ef4444;
-      color: white;
-      padding: 10px;
-      margin-bottom: 8px;
-      border-radius: 8px;
-      text-align: center;
+      background-color: var(--bg-color);
+      color: var(--text-color);
     }
 
     .main-layout {
-      display: flex !important;
-      flex-direction: row !important;
-      border: 1px solid;
+      display: flex;
+      flex-direction: row;
+      border: 1px solid var(--border-color);
       border-radius: 12px;
       overflow: hidden;
       width: 100%;
       flex: 1;
-    }
-
-    .theme-light {
-      border-color: #d1d5db;
-      background-color: #f9fafb;
-      color: #111827;
-    }
-
-    .theme-dark {
-      border-color: #4b5563;
-      background-color: #1f2937;
-      color: #f9fafb;
-    }
-
-    .theme-sepia {
-      border-color: #d6d3d1;
-      background-color: #fef3c7;
-      color: #78350f;
+      background-color: var(--bg-color);
     }
 
     .sidebar {
-      width: 280px !important;
-      min-width: 280px !important;
+      width: 280px;
+      min-width: 280px;
       padding: 20px;
-      border-right: 1px solid;
-      border-right-color: inherit;
+      border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      background-color: var(--sidebar-bg-color);
     }
 
     .sidebar-header {
       font-size: 1.25rem;
       font-weight: bold;
       margin-bottom: 16px;
+      color: var(--text-color);
     }
 
     .content-area {
@@ -212,6 +170,7 @@ interface PlainNote {
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      background-color: var(--card-bg-color);
     }
 
     .action-btn {
@@ -220,99 +179,121 @@ interface PlainNote {
       padding: 10px 16px;
       border-radius: 8px;
       font-weight: 500;
+      background-color: var(--accent-color);
       color: white;
       cursor: pointer;
+      border: none;
       transition: all 0.2s ease;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      filter: brightness(110%);
+      transform: translateY(-1px);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .new-note-btn {
       margin-bottom: 20px;
     }
 
-    .btn-light {
-      background-color: #3b82f6;
-    }
-
-    .btn-light:hover {
-      background-color: #2563eb;
-    }
-
-    .btn-dark {
-      background-color: #60a5fa;
-    }
-
-    .btn-dark:hover {
-      background-color: #3b82f6;
-    }
-
-    .btn-sepia {
-      background-color: #b45309;
-    }
-
-    .btn-sepia:hover {
-      background-color: #92400e;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 16px 0;
+    .loading, .error-message, .empty-state {
+      margin-top: 20px;
+      text-align: center;
     }
 
     .error-message {
-      padding: 12px;
-      margin: 12px 0;
+      color: var(--error-color);
+      padding: 10px;
       border-radius: 8px;
-      background-color: #ef4444;
-      color: white;
-      border: 1px solid #dc2626;
+      background-color: rgba(var(--error-color-rgb), 0.1);
+      border: 1px solid var(--error-color);
     }
 
     .notes-list {
-      overflow-y: auto;
-      margin-top: 8px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .note-item {
-      margin-bottom: 12px;
       padding: 12px;
       border-radius: 8px;
-      border: 1px solid;
-      border-color: inherit;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg-color);
     }
 
     .note-item:hover {
-      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 2px 4px var(--card-shadow-color);
+    }
+
+    .note-item:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--focus-ring-color);
+    }
+
+    .note-title {
+      font-weight: 500;
+      margin: 0 0 4px 0;
+    }
+
+    .note-date {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin: 0;
+      color: var(--text-muted-color);
     }
 
     .empty-state {
-      text-align: center;
       padding: 20px;
+      color: var(--text-muted-color);
+    }
+
+    .empty-title {
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .empty-subtitle {
+      font-size: 0.75rem;
+      opacity: 0.7;
     }
 
     .welcome-message {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100%;
+      padding: 40px;
+    }
+
+    .welcome-content {
+      text-align: center;
+      max-width: 500px;
     }
 
     .welcome-header {
-      font-size: 1.5rem;
+      font-size: 1.875rem;
       font-weight: bold;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .welcome-text {
+      font-size: 1.125rem;
       margin-bottom: 24px;
+      color: var(--text-muted-color);
     }
 
     .create-first-btn {
-      display: inline-block;
-      width: auto;
-      padding: 12px 24px;
+      max-width: 200px;
+      margin: 0 auto;
     }
 
     .editor-container {
@@ -320,51 +301,15 @@ interface PlainNote {
       display: flex;
       flex-direction: column;
       height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    app-note-editor {
-      flex: 1;
-      display: flex;
-      height: 100%;
-      min-height: 500px;
     }
 
     .footer {
-      padding: 12px;
       text-align: center;
+      padding: 16px;
       font-size: 0.875rem;
-      border-radius: 8px;
-    }
-
-    .footer-light {
-      background-color: #f3f4f6;
-      color: #6b7280;
-    }
-
-    .footer-dark {
-      background-color: #374151;
-      color: #9ca3af;
-    }
-
-    .footer-sepia {
-      background-color: #fef3c7;
-      color: #92400e;
-    }
-
-    .fix-notes-btn {
-      margin-bottom: 16px;
-      background-color: #fb923c;
-    }
-
-    .fix-notes-btn:hover {
-      background-color: #f97316;
-    }
-
-    .fix-notes-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+      color: var(--text-muted-color);
+      border-top: 1px solid var(--border-color);
+      background-color: var(--bg-color);
     }
   `
 })
@@ -380,228 +325,144 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   currentTheme = Theme.LIGHT;
-  Theme = Theme; // Make enum available to template
   selectedNoteId: string | null = null;
   currentNote: PlainNote | null = null;
 
-  // Add subject for debouncing note changes
+  // For autosave functionality
   private noteChangeSubject = new Subject<PlainNote>();
   private saveSubscription: Subscription | null = null;
+  private themeSubscription: Subscription | null = null;
 
-  // Properties for fix functionality
+  // For legacy notes migration
   showFixButton = false;
   isFixingNotes = false;
 
   ngOnInit(): void {
-    console.log('NotesListContainerComponent initialized'); // Debug log
-
-    // Set up theme
-    this.themeService.currentTheme$.subscribe(theme => {
+    // Subscribe to theme changes
+    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
 
-    // Set up crypto service with user password (in real app, this would be from secure storage)
-    // This is a dummy password for demonstration purposes only
-    const user = this.authService.getCurrentUser();
-    if (user) {
-      // In a real app, this would be from a secure key vault or user input
-      this.cryptoService.setPassword('defaultPassword');
-    }
+    // Load notes on init
+    this.loadNotes();
 
-    // Load notes first
-    this.loadNotes().then(() => {
-      // After notes are loaded, check for route parameter
-      this.route.paramMap.subscribe(params => {
-        const noteId = params.get('id');
-        if (noteId) {
-          console.log('Note ID from route:', noteId);
-          this.selectedNoteId = noteId;
-          this.loadNoteById(noteId);
-        }
+    // Watch URL for note ID
+    this.route.paramMap.subscribe(params => {
+      const noteId = params.get('id');
+      if (noteId) {
+        this.selectedNoteId = noteId;
+        this.loadNoteById(noteId);
+      } else {
+        this.selectedNoteId = null;
+        this.currentNote = null;
+      }
+    });
+
+    // Set up autosave via debounce
+    this.saveSubscription = this.noteChangeSubject
+      .pipe(debounceTime(1000)) // Debounce for 1 second
+      .subscribe(note => {
+        this.saveNote(note);
       });
-    });
-
-    // Update URL to reflect current note but don't navigate
-    this.updateUrlWithoutNavigation();
-
-    // Set up debounced save
-    this.saveSubscription = this.noteChangeSubject.pipe(
-      debounceTime(1000) // Wait 1 second after changes stop
-    ).subscribe(note => {
-      this.saveNoteToServer(note);
-    });
   }
 
   ngOnDestroy(): void {
-    // Clean up subscription
     if (this.saveSubscription) {
       this.saveSubscription.unsubscribe();
     }
-  }
 
-  /**
-   * Update URL without triggering navigation
-   */
-  private updateUrlWithoutNavigation(): void {
-    if (this.selectedNoteId) {
-      window.history.replaceState(
-        {},
-        '',
-        `/notes/${this.selectedNoteId}`
-      );
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
-  /**
-   * Load and decrypt notes
-   */
+  private updateUrlWithoutNavigation(): void {
+    const url = this.selectedNoteId
+      ? `/notes/${this.selectedNoteId}`
+      : '/notes';
+
+    // Update the URL without navigation
+    window.history.replaceState({}, '', url);
+  }
+
   async loadNotes(): Promise<void> {
     this.loading = true;
     this.error = null;
 
     try {
-      // Load encrypted notes
-      const encryptedNotes = await this.noteService.loadNotes();
-      console.log('Loaded encrypted notes:', encryptedNotes.length);
-
-      // Debug the structure of the first note if available
-      if (encryptedNotes.length > 0) {
-        const sampleNote = encryptedNotes[0];
-        console.debug('Sample note structure:', {
-          id: sampleNote.id,
-          title: sampleNote.title,
-          hasIV: !!sampleNote.iv,
-          hasSalt: !!sampleNote.salt,
-          encryptedContentLength: sampleNote.encryptedContent?.length || 0
-        });
-
-        // Show fix button if any note is missing salt
-        this.showFixButton = encryptedNotes.some(note => !note.salt);
-      }
-
-      if (!encryptedNotes.length) {
-        this.notes = [];
-        this.loading = false;
+      // Get user from auth service
+      const user = this.authService.getCurrentUser();
+      if (!user) {
+        this.router.navigate(['/auth']);
         return;
       }
 
-      // Ensure password is set for decryption
+      // Check if password is set for decryption
       if (!this.cryptoService.hasPassword()) {
-        console.warn('No crypto password set, setting default password');
-        // For demo purposes - in a real app this would come from user input
-        this.cryptoService.setPassword('defaultPassword');
+        this.router.navigate(['/auth']);
+        return;
       }
 
-      // Try to decrypt notes
-      try {
-        this.notes = await this.cryptoService.decryptNotes(encryptedNotes);
-        console.log('Successfully decrypted notes:', this.notes.length);
+      // Load encrypted notes
+      const encryptedNotes = await this.noteService.getNotes();
 
-        // Check how many notes were successfully decrypted vs failed
-        const failedNotes = this.notes.filter(note => note.content === 'Unable to decrypt content').length;
-        if (failedNotes > 0) {
-          console.warn(`${failedNotes} out of ${this.notes.length} notes could not be decrypted`);
-          // Still show the notes but with a warning
-          this.error = 'Some notes could not be decrypted. They may have been encrypted with a different password.';
-          setTimeout(() => this.error = null, 5000);
-        }
-      } catch (decryptError) {
-        console.error('Error during note decryption:', decryptError);
+      // Decrypt notes
+      const decryptedNotes: PlainNote[] = [];
+      const failedNoteIds: string[] = [];
 
-        // Show partially decrypted notes if possible
-        if (this.notes.length > 0) {
-          this.error = 'Error decrypting notes. Some notes may not be readable.';
-        } else {
-          // No notes could be decrypted
-          throw new Error('Failed to decrypt any notes');
+      for (const note of encryptedNotes) {
+        try {
+          const decryptedNote = await this.cryptoService.decryptNote(note);
+          decryptedNotes.push(decryptedNote);
+        } catch (error) {
+          console.error(`Failed to decrypt note ${note.id}:`, error);
+          failedNoteIds.push(note.id);
         }
       }
+
+      // Sort notes by updated date
+      this.notes = decryptedNotes.sort((a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+
+      // Show fix button if any notes failed to decrypt
+      this.showFixButton = failedNoteIds.length > 0;
     } catch (error) {
       console.error('Error loading notes:', error);
-      this.error = 'Failed to load notes. Please try logging in again.';
-      this.notes = [];
+      this.error = 'Failed to load notes. Please try again.';
     } finally {
       this.loading = false;
     }
   }
 
-  /**
-   * Load a note by ID
-   */
   async loadNoteById(noteId: string): Promise<void> {
     try {
-      // First try to find the note in the already loaded notes
-      const note = this.notes.find(n => n.id === noteId);
-      if (note) {
-        console.debug(`Found note ${noteId} in loaded notes`);
-        this.currentNote = note;
+      // Check if note is already loaded
+      const existingNote = this.notes.find(note => note.id === noteId);
+      if (existingNote) {
+        this.currentNote = existingNote;
         return;
       }
 
-      console.debug(`Note ${noteId} not found in loaded notes, fetching from API`);
-      // If note not found in current list, try to fetch it from the API
-      const fetchedNote = await this.noteService.getNote(noteId);
-
-      if (!fetchedNote) {
-        console.error(`Note ${noteId} not found in API`);
+      // Otherwise load from API
+      const encryptedNote = await this.noteService.getNote(noteId);
+      if (!encryptedNote) {
         throw new Error('Note not found');
       }
 
-      console.debug(`Retrieved note ${noteId} from API, attempting to decrypt`);
-      // Log the structure of the fetched note
-      console.debug('Fetched note structure:', {
-        id: fetchedNote.id,
-        title: fetchedNote.title,
-        hasIV: !!fetchedNote.iv,
-        hasSalt: !!fetchedNote.salt,
-        encryptedContentLength: fetchedNote.encryptedContent?.length || 0
-      });
-
-      // Ensure we have a password set
-      if (!this.cryptoService.hasPassword()) {
-        console.warn('No crypto password set, setting default password');
-        // For demo purposes - in a real app this would come from user input
-        this.cryptoService.setPassword('defaultPassword');
-      }
-
-      try {
-        // Attempt to decrypt the note
-        this.currentNote = await this.cryptoService.decryptNote(fetchedNote);
-        console.debug(`Successfully decrypted note ${noteId}`);
-      } catch (decryptError) {
-        console.error(`Failed to decrypt note ${noteId}:`, decryptError);
-        // Still display the note but with unreadable content
-        this.currentNote = {
-          id: fetchedNote.id,
-          title: fetchedNote.title,
-          content: 'Unable to decrypt content. This note may have been encrypted with a different password.',
-          createdAt: fetchedNote.createdAt,
-          updatedAt: fetchedNote.updatedAt
-        };
-
-        // Show an error message
-        this.error = 'Could not decrypt note content. It may have been encrypted with a different password.';
-        setTimeout(() => this.error = null, 5000);
-      }
+      // Decrypt note
+      this.currentNote = await this.cryptoService.decryptNote(encryptedNote);
     } catch (error) {
       console.error('Error loading note:', error);
       this.error = 'Failed to load note. Please try again.';
-      setTimeout(() => this.error = null, 3000);
+      this.router.navigate(['/notes']);
     }
   }
 
-  /**
-   * View a note - now loads directly in the component
-   */
   viewNote(noteId: string): void {
-    this.selectedNoteId = noteId;
-    this.loadNoteById(noteId);
-    this.updateUrlWithoutNavigation();
+    this.router.navigate(['/notes', noteId]);
   }
 
-  /**
-   * Format date for display
-   */
   formatDate(dateString: string): string {
     const date = new Date(dateString);
 
@@ -614,9 +475,6 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   }
 
-  /**
-   * Check if date is today
-   */
   private isToday(date: Date): boolean {
     const today = new Date();
     return (
@@ -626,9 +484,6 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     );
   }
 
-  /**
-   * Get a preview of the note content
-   */
   getContentPreview(note: PlainNote): string {
     if (!note.content) {
       return 'No content';
@@ -643,9 +498,6 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       : textContent;
   }
 
-  /**
-   * Get word count
-   */
   getWordCount(note: PlainNote): number {
     if (!note.content) {
       return 0;
@@ -658,39 +510,31 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     return textContent.trim().split(/\s+/).filter(Boolean).length;
   }
 
-  /**
-   * Create a new note - now creates and displays directly
-   */
   createNewNote(): void {
-    // Generate a temporary ID for the new note
-    const tempId = crypto.randomUUID();
-
-    // Set up a new empty note
     const newNote: PlainNote = {
-      id: tempId,
+      id: crypto.randomUUID(),
       title: 'Untitled Note',
       content: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Add to notes list
+    // Add to local array
     this.notes = [newNote, ...this.notes];
 
     // Set as current note
-    this.noteService.setCurrentNote(newNote);
-    this.selectedNoteId = tempId;
     this.currentNote = newNote;
+    this.selectedNoteId = newNote.id;
 
-    // Update URL without navigation
-    this.updateUrlWithoutNavigation();
+    // Update URL
+    this.router.navigate(['/notes', newNote.id]);
+
+    // Save to server
+    this.saveNoteToServer(newNote);
   }
 
-  /**
-   * Handle note changes from the editor
-   */
   handleNoteChange(noteChanges: Partial<PlainNote>): void {
-    if (!noteChanges.id || !this.currentNote) return;
+    if (!this.currentNote || !noteChanges.id) return;
 
     // Update the current note
     this.currentNote = {
@@ -699,170 +543,77 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       updatedAt: new Date().toISOString()
     };
 
-    // Update in the notes list
+    // Update the note in the list
     this.notes = this.notes.map(note =>
       note.id === this.currentNote?.id ? this.currentNote : note
     );
 
-    // Queue debounced save
+    // Trigger autosave
     this.noteChangeSubject.next(this.currentNote);
   }
 
-  /**
-   * Save note changes (debounced version)
-   */
   private async saveNoteToServer(note: PlainNote): Promise<void> {
     try {
-      // First, we need to determine if this is a new note or an existing one
-      const isNewNote = !this.notes.some(n => n.id === note.id && n !== this.currentNote);
-
-      // Ensure content is set, defaulting to empty string if undefined
-      const content = note.content || '';
-
-      // Check if CryptoService has a password set
-      if (!this.cryptoService.hasPassword()) {
-        console.warn('No password set in CryptoService, using plain text storage');
-
-        // Fall back to unencrypted storage but include ALL required fields
-        if (isNewNote) {
-          await this.noteService.createNote({
-            id: note.id,
-            title: note.title,
-            content: content,
-            encryptedContent: "******# Unable to decrypt content- ", // Placeholder
-            iv: 'dummy-iv',
-            salt: 'dummy-salt', // Make sure salt is included even for unencrypted notes
-            createdAt: note.createdAt,
-            updatedAt: note.updatedAt
-          });
-        } else {
-          await this.noteService.updateNote(note.id, {
-            title: note.title,
-            content: content,
-            encryptedContent: "******# Unable to decrypt content- ", // Placeholder
-            iv: 'dummy-iv',
-            salt: 'dummy-salt', // Make sure salt is included even for unencrypted notes
-            updatedAt: note.updatedAt
-          });
-        }
-        return;
-      }
-
-      // Actually encrypt the note using CryptoService
+      // Encrypt the note
       const encryptedNote = await this.cryptoService.encryptNote(note);
 
-      // Check that all required fields are present to avoid decryption issues
-      if (!encryptedNote.salt) {
-        console.error('Missing salt in encrypted note - this will cause decryption to fail');
-        throw new Error('Missing required encryption fields');
-      }
-
-      if (isNewNote) {
-        // Create a new note with properly encrypted content
-        await this.noteService.createNote({
-          id: note.id,
-          title: note.title,
-          content: content, // For API validation
-          encryptedContent: encryptedNote.encryptedContent,
-          iv: encryptedNote.iv,
-          salt: encryptedNote.salt, // Ensure salt is sent to server
-          createdAt: note.createdAt,
-          updatedAt: note.updatedAt
-        });
-        console.debug(`Created note ${note.id} with salt value present: ${!!encryptedNote.salt}`);
+      // Save to the server
+      if (this.notes.find(n => n.id === note.id)) {
+        // Update existing note
+        await this.noteService.updateNote(note.id, encryptedNote);
       } else {
-        // Update existing note with properly encrypted content
-        await this.noteService.updateNote(note.id, {
-          title: note.title,
-          content: content, // For API validation
-          encryptedContent: encryptedNote.encryptedContent,
-          iv: encryptedNote.iv,
-          salt: encryptedNote.salt, // Ensure salt is sent to server
-          updatedAt: note.updatedAt
-        });
-        console.debug(`Updated note ${note.id} with salt value present: ${!!encryptedNote.salt}`);
+        // Create new note
+        await this.noteService.createNote(encryptedNote);
       }
     } catch (error) {
       console.error('Error saving note:', error);
       this.error = 'Failed to save note. Please try again.';
-      setTimeout(() => this.error = null, 3000);
     }
   }
 
-  /**
-   * Replace old saveNote method
-   */
   private saveNote(note: PlainNote): void {
-    this.noteChangeSubject.next(note);
+    this.saveNoteToServer(note);
   }
 
-  /**
-   * Confirm deletion of a note
-   */
   confirmDeleteNote(noteId: string): void {
-    if (confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this note?')) {
       this.deleteNote(noteId);
     }
   }
 
-  /**
-   * Delete a note
-   */
   async deleteNote(noteId: string): Promise<void> {
     try {
+      // Delete on server
       await this.noteService.deleteNote(noteId);
+
+      // Remove from local array
       this.notes = this.notes.filter(note => note.id !== noteId);
 
-      // If the deleted note was selected, clear selection
+      // Navigate away if currently viewing
       if (this.selectedNoteId === noteId) {
-        this.selectedNoteId = null;
-        this.currentNote = null;
-
-        // Update URL
-        window.history.replaceState({}, '', '/notes');
+        this.router.navigate(['/notes']);
       }
     } catch (error) {
       console.error('Error deleting note:', error);
-      // Show error notification
       this.error = 'Failed to delete note. Please try again.';
-      setTimeout(() => this.error = null, 3000);
     }
   }
 
-  /**
-   * Fix notes with missing salt
-   */
   async fixNotes(): Promise<void> {
-    if (this.isFixingNotes) return;
-
     this.isFixingNotes = true;
-    this.error = null;
 
     try {
       const result = await this.noteService.fixNotes();
       console.log('Fix notes result:', result);
 
-      if (result.stats.fixed > 0) {
-        // Show success message
-        this.error = `Successfully fixed ${result.stats.fixed} notes. Reloading...`;
-        setTimeout(() => {
-          this.error = null;
-          // Reload notes to get updated data
-          this.loadNotes();
-        }, 2000);
-      } else {
-        this.error = 'No notes needed fixing';
-        setTimeout(() => this.error = null, 3000);
-      }
+      // Reload notes after fixing
+      await this.loadNotes();
 
-      // Hide the fix button if no more notes need fixing
-      if (result.stats.fixed > 0 && result.stats.failed === 0) {
-        this.showFixButton = false;
-      }
+      // Hide fix button
+      this.showFixButton = false;
     } catch (error) {
       console.error('Error fixing notes:', error);
       this.error = 'Failed to fix notes. Please try again.';
-      setTimeout(() => this.error = null, 3000);
     } finally {
       this.isFixingNotes = false;
     }

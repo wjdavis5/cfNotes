@@ -1,20 +1,15 @@
 import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-export enum Theme {
-  LIGHT = 'light-theme',
-  DARK = 'dark-theme',
-  SEPIA = 'sepia-theme',
-}
+import { Theme } from '../models/theme.model';
 
 @Component({
   selector: 'app-theme-selector',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="theme-selector " >
+    <div class="theme-selector" >
       <button
-        class="theme-button light-button "
+        class="theme-button light-button"
         data-label="Light Theme"
         [class.active]="currentTheme === Theme.LIGHT"
         (click)="setTheme(Theme.LIGHT)"
@@ -27,7 +22,7 @@ export enum Theme {
       </button>
 
       <button
-        class="theme-button dark-button "
+        class="theme-button dark-button"
         data-label="Dark Theme"
         [class.active]="currentTheme === Theme.DARK"
         (click)="setTheme(Theme.DARK)"
@@ -40,7 +35,7 @@ export enum Theme {
       </button>
 
       <button
-        class="theme-button sepia-button "
+        class="theme-button sepia-button"
         data-label="Sepia Theme"
         [class.active]="currentTheme === Theme.SEPIA"
         (click)="setTheme(Theme.SEPIA)"
@@ -56,24 +51,13 @@ export enum Theme {
   styles: `
     .theme-selector {
       display: flex;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(var(--bg-color-rgb), 0.15);
       border-radius: 8px;
       padding: 3px;
       gap: 3px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Dark theme specific styles */
-    :host-context(.dark-theme) .theme-selector {
-      background: rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.05);
-    }
-
-    /* Sepia theme specific styles */
-    :host-context(.sepia-theme) .theme-selector {
-      background: rgba(139, 90, 43, 0.1);
-      border-color: rgba(139, 90, 43, 0.1);
+      border: 1px solid rgba(var(--bg-color-rgb), 0.1);
+      color: var(--text-color);
     }
 
     .theme-button {
@@ -87,18 +71,8 @@ export enum Theme {
       background: transparent;
       cursor: pointer;
       transition: all 0.2s ease;
-      color: #333333;
+      color: var(--text-color);
       opacity: 0.5;
-    }
-
-    /* Dark theme button color */
-    :host-context(.dark-theme) .theme-button {
-      color: #f3f4f6;
-    }
-
-    /* Sepia theme button color */
-    :host-context(.sepia-theme) .theme-button {
-      color: #4b3621;
     }
 
     .theme-button:hover {
@@ -111,7 +85,7 @@ export enum Theme {
     }
 
     .light-button.active {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: #ffffff;
       color: #f59e0b;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
@@ -131,28 +105,6 @@ export enum Theme {
     .button-icon {
       width: 20px;
       height: 20px;
-    }
-    
-    /* Debug styles */
-    .debug-element {
-      border: 2px dashed #ffcc00 !important;
-      position: relative;
-    }
-    
-    .debug-element[data-label]::before {
-      content: attr(data-label);
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ffcc00;
-      color: black;
-      font-size: 10px;
-      padding: 1px 5px;
-      border-radius: 3px;
-      z-index: 1000;
-      font-weight: bold;
-      white-space: nowrap;
     }
   `
 })

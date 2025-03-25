@@ -1,26 +1,20 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ThemeSelectorComponent, Theme } from '../components/theme-selector.component';
+import { ThemeSelectorComponent } from '../components/theme-selector.component';
 import { ThemeService } from '../services/theme.service';
 import { AuthService } from '../services/auth.service';
+import { Theme } from '../models/theme.model';
 
 @Component({
   selector: 'app-layout-container',
   standalone: true,
   imports: [CommonModule, RouterModule, ThemeSelectorComponent],
   template: `
-    <div class="min-h-screen flex flex-col" [ngClass]="currentTheme">
+    <div class="app-container">
       <!-- Header -->
-      <header class="p-4 shadow-sm border-b"
-              [ngClass]="{
-                'bg-light-bg text-light-text border-light-secondary': currentTheme === Theme.LIGHT,
-                'bg-dark-bg text-dark-text border-dark-secondary': currentTheme === Theme.DARK,
-                'bg-sepia-bg text-sepia-text border-sepia-secondary': currentTheme === Theme.SEPIA
-              }">
+      <header class="app-header">
         <div class="container mx-auto flex justify-between items-center">
-          
-
           <div class="flex items-center space-x-4">
             <app-theme-selector
               [currentTheme]="currentTheme"
@@ -29,12 +23,7 @@ import { AuthService } from '../services/auth.service';
 
             <button
               *ngIf="isAuthenticated"
-              class="text-sm px-3 py-1.5 rounded border transition-colors"
-              [ngClass]="{
-                'border-light-secondary hover:bg-light-secondary': currentTheme === Theme.LIGHT,
-                'border-dark-secondary hover:bg-dark-secondary': currentTheme === Theme.DARK,
-                'border-sepia-secondary hover:bg-sepia-secondary': currentTheme === Theme.SEPIA
-              }"
+              class="logout-button"
               (click)="logout()"
             >
               Logout
@@ -44,23 +33,13 @@ import { AuthService } from '../services/auth.service';
       </header>
 
       <!-- Main content -->
-      <main class="flex-1 container mx-auto p-4"
-            [ngClass]="{
-              'bg-light-bg text-light-text': currentTheme === Theme.LIGHT,
-              'bg-dark-bg text-dark-text': currentTheme === Theme.DARK,
-              'bg-sepia-bg text-sepia-text': currentTheme === Theme.SEPIA
-            }">
+      <main class="app-main">
         <router-outlet></router-outlet>
       </main>
 
       <!-- Footer -->
-      <footer class="py-3 text-center text-sm border-t"
-              [ngClass]="{
-                'border-light-secondary text-light-text/60': currentTheme === Theme.LIGHT,
-                'border-dark-secondary text-dark-text/60': currentTheme === Theme.DARK,
-                'border-sepia-secondary text-sepia-text/60': currentTheme === Theme.SEPIA
-              }">
-        
+      <footer class="app-footer">
+
       </footer>
     </div>
   `,
@@ -68,6 +47,51 @@ import { AuthService } from '../services/auth.service';
     :host {
       display: block;
       height: 100%;
+    }
+
+    .app-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .app-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--header-bg-color);
+      box-shadow: 0 2px 4px var(--card-shadow-color);
+    }
+
+    .logout-button {
+      font-size: 0.875rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.25rem;
+      border: 1px solid var(--border-color);
+      background-color: transparent;
+      color: var(--text-color);
+      transition: background-color 0.2s;
+    }
+
+    .logout-button:hover {
+      background-color: var(--hover-color);
+    }
+
+    .app-main {
+      flex: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .app-footer {
+      padding: 0.75rem 0;
+      text-align: center;
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted-color);
     }
   `
 })
@@ -77,7 +101,6 @@ export class AppLayoutContainerComponent implements OnInit {
 
   currentTheme = Theme.LIGHT;
   isAuthenticated = false;
-  Theme = Theme; // Make enum available in template
 
   ngOnInit(): void {
     // Initialize theme

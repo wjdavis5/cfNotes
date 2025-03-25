@@ -15,10 +15,10 @@ export interface AuthFormData {
   templateUrl: './auth-form.component.html',
   styles: `
     .auth-form {
-      background: var(--card-bg);
+      background: var(--card-bg-color);
       border-radius: 16px;
       padding: 32px;
-      box-shadow: var(--card-shadow);
+      box-shadow: 0 10px 25px -5px var(--card-shadow-color);
       width: 100%;
       max-width: 100%;
       transition: all 0.3s ease;
@@ -35,8 +35,7 @@ export interface AuthFormData {
     .form-subtitle {
       font-size: 16px;
       margin: 0 0 32px 0;
-      color: var(--text-color);
-      opacity: 0.7;
+      color: var(--text-muted-color);
       text-align: center;
     }
 
@@ -69,7 +68,7 @@ export interface AuthFormData {
       transform: translateY(-50%);
       width: 20px;
       height: 20px;
-      color: var(--primary-color);
+      color: var(--accent-color);
       opacity: 0.7;
     }
 
@@ -77,8 +76,8 @@ export interface AuthFormData {
       width: 100%;
       padding: 14px 14px 14px 44px;
       border-radius: 8px;
-      border: 1px solid rgba(var(--text-color-rgb), 0.1);
-      background: rgba(var(--text-color-rgb), 0.03);
+      border: 1px solid var(--border-color);
+      background: var(--input-bg-color);
       color: var(--text-color);
       font-size: 16px;
       transition: all 0.2s ease;
@@ -86,18 +85,17 @@ export interface AuthFormData {
 
     input:focus {
       outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.15);
     }
 
     input::placeholder {
-      color: rgba(var(--text-color-rgb), 0.4);
+      color: var(--text-muted-color);
     }
 
     .input-help {
       font-size: 12px;
-      color: var(--text-color);
-      opacity: 0.6;
+      color: var(--text-muted-color);
       margin: 8px 0 0 0;
     }
 
@@ -119,7 +117,7 @@ export interface AuthFormData {
     }
 
     .submit-button {
-      background: var(--primary-color);
+      background: var(--accent-color);
       color: white;
       font-size: 16px;
       font-weight: 600;
@@ -135,7 +133,8 @@ export interface AuthFormData {
 
     .submit-button:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      filter: brightness(110%);
+      box-shadow: 0 4px 8px var(--card-shadow-color);
     }
 
     .submit-button:disabled {
@@ -162,32 +161,17 @@ export interface AuthFormData {
       margin-top: 32px;
       text-align: center;
       font-size: 14px;
-      color: var(--text-color);
-      opacity: 0.7;
+      color: var(--text-muted-color);
     }
   `
 })
 export class AuthFormComponent {
   @Input() loading = false;
   @Input() error: string | null = null;
-  @Input() currentTheme = 'light-theme'; // Default theme
   @Output() formSubmit = new EventEmitter<AuthFormData>();
 
   email = '';
   password = '';
-
-  // Computed properties for theme checking
-  get isThemeLight(): boolean {
-    return this.currentTheme === 'light-theme';
-  }
-
-  get isThemeDark(): boolean {
-    return this.currentTheme === 'dark-theme';
-  }
-
-  get isThemeSepia(): boolean {
-    return this.currentTheme === 'sepia-theme';
-  }
 
   /**
    * Handle form submission

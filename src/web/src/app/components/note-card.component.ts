@@ -1,11 +1,9 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { ThemeService } from '../services/theme.service';
-import { Theme } from './theme-selector.component';
+import { Theme } from '../models/theme.model';
 
-// Placeholder interface until Nx libraries are properly set up
-interface PlainNote {
+export interface Note {
   id: string;
   title: string;
   content: string;
@@ -16,16 +14,10 @@ interface PlainNote {
 @Component({
   selector: 'app-note-card',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule],
   template: `
-  <h1>TEST</h1>
     <div
-      class="group bg-opacity-50 border rounded-xl overflow-hidden transition-all duration-300 flex flex-col h-full"
-      [ngClass]="{
-        'bg-white border-light-secondary hover:shadow-lg hover:border-light-accent text-light-text': currentTheme === Theme.LIGHT,
-        'bg-dark-secondary/40 border-dark-secondary hover:shadow-lg hover:border-dark-accent text-dark-text': currentTheme === Theme.DARK,
-        'bg-sepia-secondary/30 border-sepia-secondary hover:shadow-lg hover:border-sepia-accent text-sepia-text': currentTheme === Theme.SEPIA
-      }"
+      class="note-card themed-card"
       (click)="onSelect()"
       (keydown.enter)="onSelect()"
       (keydown.space)="onSelect()"
@@ -33,91 +25,124 @@ interface PlainNote {
       role="button"
       [attr.aria-label]="'Select note: ' + (note.title || 'Untitled Note')"
     >
-      <div class="p-5 flex-grow">
-        <div class="flex justify-between items-start mb-3">
-          <h3 class="text-lg font-semibold line-clamp-2"
-              [ngClass]="{
-                'text-light-text': currentTheme === Theme.LIGHT,
-                'text-dark-text': currentTheme === Theme.DARK,
-                'text-sepia-text': currentTheme === Theme.SEPIA
-              }">{{ note.title || 'Untitled Note' }}</h3>
-          <button
-            *ngIf="allowDelete"
-            class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full -mt-1 -mr-1"
-            [ngClass]="{
-              'hover:bg-red-100 text-red-500': currentTheme === Theme.LIGHT,
-              'hover:bg-red-900/30 text-red-400': currentTheme === Theme.DARK,
-              'hover:bg-red-100/50 text-red-700': currentTheme === Theme.SEPIA
-            }"
-            (click)="onDeleteClick($event)"
-            aria-label="Delete note"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-              <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z" clip-rule="evenodd" />
-            </svg>
-          </button>
-        </div>
-        
-        <p class="text-sm line-clamp-3 mb-4"
-          [ngClass]="{
-            'text-light-text/70': currentTheme === Theme.LIGHT,
-            'text-dark-text/70': currentTheme === Theme.DARK,
-            'text-sepia-text/70': currentTheme === Theme.SEPIA
-          }">
-          {{ getContentPreview() }}
-        </p>
+      <div class="note-header">
+        <h3 class="note-title">{{ note.title || 'Untitled Note' }}</h3>
+        <button
+          class="delete-button"
+          (click)="onDeleteClick($event)"
+          aria-label="Delete note"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="delete-icon">
+            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+          </svg>
+        </button>
       </div>
-      
-      <div class="flex justify-between items-center px-5 py-3 text-xs"
-        [ngClass]="{
-          'bg-light-secondary/50 text-light-text/60': currentTheme === Theme.LIGHT,
-          'bg-dark-secondary/70 text-dark-text/60': currentTheme === Theme.DARK,
-          'bg-sepia-secondary/50 text-sepia-text/60': currentTheme === Theme.SEPIA
-        }">
-        <span>{{ formatDate(note.updatedAt) }}</span>
-        <span>{{ getWordCount() }} words</span>
+      <div class="note-content">
+        <p class="content-preview">{{ getContentPreview() }}</p>
+      </div>
+      <div class="note-footer">
+        <span class="note-date">{{ formatDate(note.updatedAt) }}</span>
+        <span class="word-count">{{ getWordCount() }} words</span>
       </div>
     </div>
   `,
   styles: `
-    :host {
-      display: block;
+    .note-card {
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      height: 100%;
+      min-height: 150px;
+      outline: none; /* Remove default focus outline */
     }
-    
-    /* Enhance line clamping for content preview */
-    .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+
+    .note-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px var(--card-shadow-color);
+    }
+
+    .note-card:focus-visible {
+      box-shadow: 0 0 0 2px var(--focus-ring-color);
+      transform: translateY(-2px);
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .note-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-color);
+      word-break: break-word;
+    }
+
+    .delete-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      margin: -4px;
+      border-radius: 4px;
+      opacity: 0.5;
+      color: var(--text-color);
+      transition: all 0.2s ease;
+    }
+
+    .delete-button:hover {
+      opacity: 1;
+      background-color: var(--hover-color);
+    }
+
+    .delete-button:focus-visible {
+      opacity: 1;
+      outline: none;
+      box-shadow: 0 0 0 2px var(--focus-ring-color);
+    }
+
+    .delete-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .note-content {
+      flex: 1;
       overflow: hidden;
     }
-    
-    .line-clamp-3 {
+
+    .content-preview {
+      font-size: 14px;
+      color: var(--text-muted-color);
+      margin: 0;
+      overflow: hidden;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.5;
+    }
+
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted-color);
+      margin-top: 8px;
     }
   `
 })
 export class NoteCardComponent {
-  private themeService = inject(ThemeService);
-  
-  @Input({ required: true }) note!: PlainNote;
-  @Input() selected = false;
-  @Input() allowDelete = true;
-
+  @Input() note!: Note;
   @Output() selectNote = new EventEmitter<string>();
   @Output() deleteNote = new EventEmitter<string>();
-  
-  currentTheme = Theme.LIGHT;
-  Theme = Theme; // Make enum available to template
-  
-  constructor() {
-    this.themeService.currentTheme$.subscribe(theme => {
-      this.currentTheme = theme;
-    });
-  }
+
+  private themeService = inject(ThemeService);
 
   /**
    * Handle card selection
@@ -177,7 +202,7 @@ export class NoteCardComponent {
       ? `${textContent.substring(0, 150)}...`
       : textContent;
   }
-  
+
   /**
    * Get word count
    */
@@ -185,10 +210,10 @@ export class NoteCardComponent {
     if (!this.note.content) {
       return 0;
     }
-    
+
     // Strip HTML tags for accurate word count
     const textContent = this.note.content.replace(/<[^>]*>/g, '');
-    
+
     // Count words by splitting on whitespace
     return textContent.trim().split(/\s+/).filter(Boolean).length;
   }

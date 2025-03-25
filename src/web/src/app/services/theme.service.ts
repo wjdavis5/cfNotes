@@ -1,13 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { StorageService } from './storage.service';
-
-// Theme options to match our CSS classes
-export enum Theme {
-  LIGHT = 'light-theme',
-  DARK = 'dark-theme',
-  SEPIA = 'sepia-theme',
-}
+import { Theme, THEME_COLORS, THEME_CSS_VARS, THEME_COLOR_SCHEME, ThemeColors } from '../models/theme.model';
 
 @Injectable({
   providedIn: 'root'
@@ -15,11 +9,17 @@ export enum Theme {
 export class ThemeService {
   private readonly THEME_KEY = 'selected_theme';
   private readonly DEFAULT_THEME = Theme.LIGHT;
+  private renderer: Renderer2;
 
   private themeSubject = new BehaviorSubject<Theme>(this.DEFAULT_THEME);
   currentTheme$ = this.themeSubject.asObservable();
 
-  constructor(private storageService: StorageService) {
+  constructor(
+    private storageService: StorageService,
+    private rendererFactory: RendererFactory2
+  ) {
+    // Create renderer to safely manipulate DOM
+    this.renderer = rendererFactory.createRenderer(null, null);
     this.loadSavedTheme();
   }
 
@@ -44,6 +44,21 @@ export class ThemeService {
    */
   getCurrentTheme(): Theme {
     return this.themeSubject.value;
+  }
+
+  /**
+   * Get color value for current theme by semantic name
+   */
+  getThemeColor(colorKey: keyof ThemeColors): string {
+    const currentTheme = this.themeSubject.value;
+    return THEME_COLORS[currentTheme][colorKey];
+  }
+
+  /**
+   * Check if current theme is dark mode
+   */
+  isDarkMode(): boolean {
+    return this.themeSubject.value === Theme.DARK;
   }
 
   /**
@@ -87,58 +102,66 @@ export class ThemeService {
    */
   private checkSystemPreference(): void {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      this.applyTheme(Theme.DARK);
-      this.themeSubject.next(Theme.DARK);
+      this.setTheme(Theme.DARK);
     } else {
-      this.applyTheme(this.DEFAULT_THEME);
+      this.setTheme(this.DEFAULT_THEME);
     }
   }
 
   /**
-   * Apply theme to document root
+   * Apply theme to document
    */
   private applyTheme(theme: Theme): void {
-    // Remove all theme classes from document element
-    document.documentElement.classList.remove(
-      Theme.LIGHT,
-      Theme.DARK,
-      Theme.SEPIA
-    );
+    if (typeof document === 'undefined') return; // Guard for SSR
 
-    // Add the selected theme class to document element
-    document.documentElement.classList.add(theme);
-    
-    // Remove all theme classes from body element
-    document.body.classList.remove(
-      Theme.LIGHT,
-      Theme.DARK,
-      Theme.SEPIA
-    );
-    
-    // Add the selected theme class to body element
-    document.body.classList.add(theme);
+    // Set CSS variables based on theme colors
+    this.setCSSVariables(theme);
+
+    // Set color scheme
+    this.renderer.setAttribute(document.documentElement, 'color-scheme', THEME_COLOR_SCHEME[theme]);
+
+    // Apply theme class to document element
+    this.applyThemeClass(document.documentElement, theme);
+
+    // Apply theme class to body element
+    this.applyThemeClass(document.body, theme);
 
     // Update meta theme-color for mobile browsers
     this.updateMetaThemeColor(theme);
   }
 
   /**
+   * Apply theme class to an element, removing other theme classes
+   */
+  private applyThemeClass(element: HTMLElement, theme: Theme): void {
+    // Remove all theme classes
+    Object.values(Theme).forEach(themeClass => {
+      this.renderer.removeClass(element, themeClass);
+    });
+
+    // Add selected theme class
+    this.renderer.addClass(element, theme);
+  }
+
+  /**
+   * Set CSS variables based on theme colors
+   */
+  private setCSSVariables(theme: Theme): void {
+    const themeColors = THEME_COLORS[theme];
+    const root = document.documentElement;
+
+    // Apply each color as a CSS variable
+    Object.entries(themeColors).forEach(([colorKey, colorValue]) => {
+      const varName = THEME_CSS_VARS[colorKey as keyof ThemeColors];
+      this.renderer.setStyle(root, varName, colorValue);
+    });
+  }
+
+  /**
    * Update meta theme-color for mobile browsers
    */
   private updateMetaThemeColor(theme: Theme): void {
-    let color: string;
-
-    switch (theme) {
-      case Theme.DARK:
-        color = '#1e293b'; // dark-bg
-        break;
-      case Theme.SEPIA:
-        color = '#f8f4e8'; // sepia-bg
-        break;
-      default:
-        color = '#ffffff'; // light-bg
-    }
-
+    const backgroundColor = THEME_COLORS[theme].background;
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
 
     if (!metaThemeColor) {
@@ -147,6 +170,6 @@ export class ThemeService {
       document.head.appendChild(metaThemeColor);
     }
 
-    metaThemeColor.setAttribute('content', color);
+    metaThemeColor.setAttribute('content', backgroundColor);
   }
 }

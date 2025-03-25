@@ -4,15 +4,16 @@ import { Router } from '@angular/router';
 import { AuthFormComponent, AuthFormData } from '../components/auth-form.component';
 import { AuthService } from '../services/auth.service';
 import { CryptoService } from '../services/crypto.service';
-import { ThemeSelectorComponent, Theme } from '../components/theme-selector.component';
+import { ThemeSelectorComponent } from '../components/theme-selector.component';
 import { ThemeService } from '../services/theme.service';
+import { Theme } from '../models/theme.model';
 
 @Component({
   selector: 'app-auth-container',
   standalone: true,
   imports: [CommonModule, AuthFormComponent, ThemeSelectorComponent],
   template: `
-    <div class="page-container" [ngClass]="currentTheme">
+    <div class="page-container">
       <!-- Theme toggle in corner -->
       <div class="theme-selector-container">
         <app-theme-selector
@@ -38,7 +39,6 @@ import { ThemeService } from '../services/theme.service';
           <app-auth-form
             [loading]="loading"
             [error]="error"
-            [currentTheme]="currentTheme"
             (formSubmit)="onFormSubmit($event)"
           ></app-auth-form>
         </div>
@@ -62,34 +62,11 @@ import { ThemeService } from '../services/theme.service';
       flex-direction: column;
       min-height: 100vh;
       position: relative;
-      background: var(--bg-gradient);
+      background: linear-gradient(135deg, var(--bg-color) 0%, var(--secondary-color) 100%);
       padding: 0;
       margin: 0;
       transition: background 0.3s ease;
-    }
-
-    .light-theme {
-      --primary-color: #3b82f6;
-      --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #dbeafe 100%);
-      --text-color: #1e293b;
-      --card-bg: #ffffff;
-      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-
-    .dark-theme {
-      --primary-color: #60a5fa;
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      --text-color: #f1f5f9;
-      --card-bg: #1e293b;
-      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-
-    .sepia-theme {
-      --primary-color: #8b5a2b;
-      --bg-gradient: linear-gradient(135deg, #f8f4e8 0%, #eadfc8 100%);
-      --text-color: #4b3621;
-      --card-bg: #f8f4e8;
-      --card-shadow: 0 10px 25px -5px rgba(139, 90, 43, 0.15);
+      color: var(--text-color);
     }
 
     .theme-selector-container {
@@ -123,7 +100,7 @@ import { ThemeService } from '../services/theme.service';
     .logo-icon {
       width: 36px;
       height: 36px;
-      color: var(--primary-color);
+      color: var(--accent-color);
       margin-right: 10px;
     }
 
@@ -136,8 +113,7 @@ import { ThemeService } from '../services/theme.service';
 
     .brand-tagline {
       font-size: 16px;
-      color: var(--text-color);
-      opacity: 0.8;
+      color: var(--text-muted-color);
       margin: 0;
     }
 
@@ -150,8 +126,7 @@ import { ThemeService } from '../services/theme.service';
     .footer {
       text-align: center;
       padding: 16px;
-      color: var(--text-color);
-      opacity: 0.6;
+      color: var(--text-muted-color);
       font-size: 14px;
     }
 
@@ -180,7 +155,6 @@ export class AuthContainerComponent {
   loading = false;
   error: string | null = null;
   currentTheme = Theme.LIGHT;
-  Theme = Theme; // Make enum available in template
 
   constructor() {
     // Initialize theme
