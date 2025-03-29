@@ -62,7 +62,7 @@ import { Theme } from '../models/theme.model';
       flex-direction: column;
       min-height: 100vh;
       position: relative;
-      background: linear-gradient(135deg, var(--bg-color) 0%, var(--secondary-color) 100%);
+
       padding: 0;
       margin: 0;
       transition: background 0.3s ease;

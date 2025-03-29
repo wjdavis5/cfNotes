@@ -169,6 +169,23 @@ interface PlainNote {
       background-color: rgba(255, 255, 255, 0.1);
     }
 
+    /* Style active formats */
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar button.ql-active,
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar .ql-picker-label.ql-active,
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar .ql-picker-item.ql-selected {
+      color: var(--accent-color) !important;
+    }
+
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar button.ql-active .ql-stroke,
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-stroke {
+      stroke: var(--accent-color) !important;
+    }
+
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar button.ql-active .ql-fill,
+    :host-context(.dark-theme) ::ng-deep .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-fill {
+      fill: var(--accent-color) !important;
+    }
+
     /* Add specific selection color for the editor that matches the theme */
     :host ::ng-deep .ql-editor ::selection {
       background-color: var(--accent-color);
