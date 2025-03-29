@@ -5,6 +5,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { QUILL_CONFIG_TOKEN, QuillModule } from 'ngx-quill';
 import { apiUrlInterceptor } from './interceptors/api-url.interceptor';
+import { csrfInterceptor } from './interceptors/csrf.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,7 +13,7 @@ export const appConfig: ApplicationConfig = {
       routes,
       withComponentInputBinding()
     ),
-    provideHttpClient(withInterceptors([apiUrlInterceptor])),
+    provideHttpClient(withInterceptors([csrfInterceptor, apiUrlInterceptor])),
     provideAnimations(),
     importProvidersFrom(
       QuillModule.forRoot({

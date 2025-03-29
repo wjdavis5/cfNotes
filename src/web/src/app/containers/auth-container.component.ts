@@ -35,6 +35,21 @@ import { Theme } from '../models/theme.model';
           <p class="brand-tagline">Secure cloud notes with end-to-end encryption</p>
         </div>
 
+        <!-- Security Information -->
+        <div class="security-info">
+          <h3 class="security-header">Your Privacy Matters</h3>
+          <ul class="security-features">
+            <li><strong>Zero-knowledge privacy:</strong> Your email address is never stored directly - we only use a secure hash for authentication.</li>
+            <li><strong>End-to-end encryption:</strong> All notes are encrypted with AES-256 in your browser before storage.</li>
+            <li><strong>Secure by design:</strong> Your password never leaves your device and generates your encryption keys.</li>
+            <li><strong>Memory-only option:</strong> Advanced security mode keeps encryption keys only in memory, never in browser storage.</li>
+            <li><strong>Session timeouts:</strong> Automatic logout after 30 minutes of inactivity protects your data.</li>
+            <li><strong>Page exit protection:</strong> Automatically logs you out when closing tabs or navigating away.</li>
+            <li><strong>CSRF protection:</strong> Built-in safeguards against cross-site request forgery attacks.</li>
+            <li><strong>Cloudflare KV storage:</strong> Encrypted notes are stored in Cloudflare's global key-value storage.</li>
+          </ul>
+        </div>
+
         <div class="form-container">
           <app-auth-form
             [loading]="loading"
@@ -46,7 +61,10 @@ import { Theme } from '../models/theme.model';
 
       <!-- Footer -->
       <footer class="footer">
-        <p>cfNote - Your notes are secure and private</p>
+        <p>
+          cfNote - Your notes are secure and private |
+          <a href="https://github.com/wjdavis5/cfNotes" target="_blank" rel="noopener" class="repo-link">GitHub Repo</a>
+        </p>
       </footer>
     </div>
   `,
@@ -128,6 +146,58 @@ import { Theme } from '../models/theme.model';
       padding: 16px;
       color: var(--text-muted-color);
       font-size: 14px;
+    }
+
+    .security-info {
+      max-width: 550px;
+      margin: 0 auto 24px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      background-color: rgba(var(--accent-color-rgb), 0.1);
+      border: 1px solid var(--border-color);
+    }
+
+    .security-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent-color);
+      text-align: center;
+    }
+
+    .security-features {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .security-features li {
+      margin-bottom: 8px;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .security-features li:before {
+      content: '✓';
+      color: var(--accent-color);
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    .security-features li:last-child {
+      margin-bottom: 0;
+    }
+
+    .repo-link {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .repo-link:hover {
+      opacity: 0.8;
+      text-decoration: underline;
     }
 
     @media (max-width: 768px) {

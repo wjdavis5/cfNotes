@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { StorageService } from './storage.service';
+import { StorageService, StorageType } from './storage.service';
+import { BehaviorSubject } from 'rxjs';
 
 // Placeholder interfaces that will be replaced with proper imports
 interface Note {
@@ -21,17 +22,127 @@ interface PlainNote {
   updatedAt: string;
 }
 
+/**
+ * Secure mode options for key management
+ */
+export enum SecureMode {
+  // Store encryption key in sessionStorage (cleared on browser close)
+  SESSION_STORAGE = 'session_storage',
+  // Store encryption key in memory only, require re-auth for sensitive operations
+  MEMORY_ONLY = 'memory_only'
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CryptoService {
   private storageService = inject(StorageService);
+
+  // In-memory password storage (never persisted in memory-only mode)
   private password: string | null = null;
+
+  // Keys for storage
   private readonly PASSWORD_KEY = 'crypto_password';
+  private readonly SECURE_MODE_KEY = 'crypto_secure_mode';
+
+  // Default to memory-only mode for maximum security
+  private secureMode: SecureMode = SecureMode.MEMORY_ONLY;
+
+  // Session activity tracking for auto-logout
+  private lastActivity = Date.now();
+  private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+  // Password state for UI components to react to
+  private passwordStateSubject = new BehaviorSubject<boolean>(false);
+  public passwordState$ = this.passwordStateSubject.asObservable();
 
   constructor() {
-    // Try to load password from storage on service initialization
-    this.loadPasswordFromStorage();
+    // Load secure mode preference
+    this.loadSecureMode();
+
+    // Try to load password if not in memory-only mode
+    if (this.secureMode === SecureMode.SESSION_STORAGE) {
+      this.loadPasswordFromStorage();
+    }
+
+    // Set up activity monitoring for session timeout
+    this.setupActivityMonitoring();
+  }
+
+  /**
+   * Load secure mode preference
+   */
+  private loadSecureMode(): void {
+    try {
+      const savedMode = this.storageService.get<SecureMode>(
+        this.SECURE_MODE_KEY,
+        StorageType.SESSION
+      );
+      if (savedMode && Object.values(SecureMode).includes(savedMode)) {
+        this.secureMode = savedMode;
+      }
+    } catch (error) {
+      console.error('Error loading secure mode preference:', error);
+    }
+  }
+
+  /**
+   * Set secure mode
+   */
+  setSecureMode(mode: SecureMode): void {
+    this.secureMode = mode;
+    this.storageService.set(this.SECURE_MODE_KEY, mode, StorageType.SESSION);
+
+    // If changing to memory-only, remove any stored password
+    if (mode === SecureMode.MEMORY_ONLY) {
+      this.storageService.remove(this.PASSWORD_KEY);
+    } else if (this.password) {
+      // If we have a password in memory and changing to session storage, save it
+      this.storageService.set(this.PASSWORD_KEY, this.password, StorageType.SESSION);
+    }
+  }
+
+  /**
+   * Get current secure mode
+   */
+  getSecureMode(): SecureMode {
+    return this.secureMode;
+  }
+
+  /**
+   * Setup activity monitoring for session timeout
+   */
+  private setupActivityMonitoring(): void {
+    const events = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+
+    // Update last activity timestamp on user interaction
+    const updateActivity = () => {
+      this.lastActivity = Date.now();
+    };
+
+    // Add event listeners
+    events.forEach(event => {
+      window.addEventListener(event, updateActivity, true);
+    });
+
+    // Check for inactivity every minute
+    setInterval(() => this.checkInactivity(), 60 * 1000);
+  }
+
+  /**
+   * Check for user inactivity and clear password if timeout exceeded
+   */
+  private checkInactivity(): void {
+    const now = Date.now();
+    const timeSinceLastActivity = now - this.lastActivity;
+
+    if (timeSinceLastActivity > this.SESSION_TIMEOUT && this.password) {
+      console.log('Session timeout due to inactivity, clearing sensitive data');
+      this.clearPassword();
+
+      // Dispatch a custom event that the app can listen for to show a timeout message
+      window.dispatchEvent(new CustomEvent('session-timeout'));
+    }
   }
 
   /**
@@ -39,10 +150,14 @@ export class CryptoService {
    */
   private loadPasswordFromStorage(): void {
     try {
-      const storedPassword = this.storageService.get<string>(this.PASSWORD_KEY);
+      const storedPassword = this.storageService.get<string>(
+        this.PASSWORD_KEY,
+        StorageType.SESSION
+      );
       if (storedPassword) {
         this.password = storedPassword;
-        console.log('Crypto password loaded from storage');
+        this.passwordStateSubject.next(true);
+        console.log('Crypto password loaded from session storage');
       }
     } catch (error) {
       console.error('Error loading crypto password from storage:', error);
@@ -54,13 +169,17 @@ export class CryptoService {
    */
   setPassword(password: string): void {
     this.password = password;
+    this.passwordStateSubject.next(true);
+    this.lastActivity = Date.now(); // Reset inactivity timer
 
-    // Store password in storage for persistence
-    try {
-      this.storageService.set(this.PASSWORD_KEY, password);
-      console.log('Crypto password saved to storage');
-    } catch (error) {
-      console.error('Error saving crypto password to storage:', error);
+    // Store password in session storage if not in memory-only mode
+    if (this.secureMode === SecureMode.SESSION_STORAGE) {
+      try {
+        this.storageService.set(this.PASSWORD_KEY, password, StorageType.SESSION);
+        console.log('Crypto password saved to session storage');
+      } catch (error) {
+        console.error('Error saving crypto password to storage:', error);
+      }
     }
   }
 
@@ -69,6 +188,9 @@ export class CryptoService {
    */
   clearPassword(): void {
     this.password = null;
+    this.passwordStateSubject.next(false);
+
+    // Remove from all storage types to be safe
     try {
       this.storageService.remove(this.PASSWORD_KEY);
       console.log('Crypto password removed from storage');
@@ -85,6 +207,15 @@ export class CryptoService {
   }
 
   /**
+   * Request password re-authentication for sensitive operations in memory-only mode
+   * This should be called before sensitive operations and will return true if already authenticated
+   * or if in session storage mode
+   */
+  needsReAuthentication(): boolean {
+    return this.secureMode === SecureMode.MEMORY_ONLY && !this.password;
+  }
+
+  /**
    * Encrypt a note
    */
   async encryptNote(plainNote: PlainNote): Promise<Note> {
@@ -93,6 +224,9 @@ export class CryptoService {
     }
 
     try {
+      // Update last activity timestamp
+      this.lastActivity = Date.now();
+
       // Generate random IV
       const iv = crypto.getRandomValues(new Uint8Array(12));
 
@@ -166,6 +300,9 @@ export class CryptoService {
       console.error('Decryption failed: No password set');
       throw new Error('Password is not set');
     }
+
+    // Update last activity timestamp
+    this.lastActivity = Date.now();
 
     try {
       console.debug(`Attempting to decrypt note ${note.id}`);

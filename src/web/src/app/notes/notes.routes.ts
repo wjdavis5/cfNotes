@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { reAuthGuard } from '../guards/reauth.guard';
 
 export const NOTES_ROUTES: Routes = [
   {
@@ -7,6 +8,7 @@ export const NOTES_ROUTES: Routes = [
   },
   {
     path: ':id',
-    loadComponent: () => import('./containers/notes-list-container.component').then(m => m.NotesListContainerComponent)
+    canActivate: [reAuthGuard],
+    loadComponent: () => import('./containers/note-detail-container.component').then(m => m.NoteDetailContainerComponent)
   }
 ];

@@ -2,6 +2,38 @@
 
 This README documents UI customizations and important implementation details for the cfNote web application.
 
+## Security Features
+
+cfNote implements several advanced security features to ensure your data remains private and secure:
+
+### Authentication & Encryption
+
+- **Zero-knowledge architecture**: Email addresses are stored only as secure hashes
+- **End-to-end encryption**: All notes are encrypted with AES-256 before leaving your browser
+- **PBKDF2 key derivation**: Uses 100,000 iterations and SHA-256 for strong encryption keys
+
+### Enhanced Security Measures
+
+- **Secure password storage options**:
+  - **Session Storage Mode**: Encryption keys are stored in sessionStorage (cleared when browser closes)
+  - **Memory-Only Mode**: Encryption keys are never persisted to browser storage
+  - **Re-authentication**: Sensitive operations require password re-entry in Memory-Only Mode
+
+- **Session timeout**: Automatic logout after 30 minutes of inactivity
+
+- **Auto-logout on page exit**: Forces secure cleanup when users navigate away or close the browser
+
+- **CSRF protection**: Implemented using a double-submit cookie pattern 
+
+- **Secure headers**: Content Security Policy and other security headers
+
+### Implementation Notes
+
+- Password storage uses sessionStorage instead of localStorage to mitigate XSS vulnerabilities
+- Activity monitoring tracks user interactions to detect when timeout should occur
+- CSRF protection adds tokens to all non-GET API requests
+- Re-authentication guard prevents access to sensitive routes without valid credentials
+
 ## Quill Editor Implementation
 
 The application uses [Quill](https://quilljs.com/) rich text editor via the [ngx-quill](https://github.com/KillerCodeMonkey/ngx-quill) wrapper for Angular.

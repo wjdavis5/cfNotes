@@ -14,9 +14,17 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Add middleware
 app.use('*', cors({
-  origin: '*', // In production, limit this to your frontend domain
+  origin: ['http://localhost:4200', 'https://cfnote.app', 'https://cfnote.wjd.io'], // Allow local development and production domains
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-CSRF-Token',    // Add CSRF token header
+    'X-Requested-With',
+    'Accept'
+  ],
+  exposeHeaders: ['X-CSRF-Token'], // Expose CSRF token header to frontend
+  credentials: true,  // Allow credentials (cookies) to be sent
   maxAge: 86400,
 }));
 
