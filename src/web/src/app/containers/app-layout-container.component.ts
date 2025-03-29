@@ -17,21 +17,19 @@ import { StorageService } from '../services/storage.service';
     <div class="app-container">
       <!-- Header -->
       <header class="app-header">
-        <div class="container mx-auto flex justify-between items-center">
-          <div class="flex items-center space-x-4">
-            <app-theme-selector
-              [currentTheme]="currentTheme"
-              (themeChange)="onThemeChange($event)"
-            ></app-theme-selector>
+        <div class="header-container">
+          <app-theme-selector
+            [currentTheme]="currentTheme"
+            (themeChange)="onThemeChange($event)"
+          ></app-theme-selector>
 
-            <button
-              *ngIf="isAuthenticated"
-              class="logout-button"
-              (click)="logout()"
-            >
-              Logout
-            </button>
-          </div>
+          <button
+            *ngIf="isAuthenticated"
+            class="logout-button"
+            (click)="logout()"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -67,6 +65,13 @@ import { StorageService } from '../services/storage.service';
       box-shadow: 0 2px 4px var(--card-shadow-color);
     }
 
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
     .logout-button {
       font-size: 0.875rem;
       padding: 0.375rem 0.75rem;
@@ -84,9 +89,7 @@ import { StorageService } from '../services/storage.service';
     .app-main {
       flex: 1;
       width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
+      margin: 0;
     }
 
     .app-footer {

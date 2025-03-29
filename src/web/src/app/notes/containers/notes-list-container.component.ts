@@ -129,25 +129,23 @@ interface PlainNote {
     }
 
     .notes-container {
-      padding: 16px;
       display: flex;
       flex-direction: column;
       width: 100%;
       height: calc(100vh - 64px); /* Full height minus header */
-      gap: 16px;
       background-color: var(--bg-color);
       color: var(--text-color);
+      box-sizing: border-box;
     }
 
     .main-layout {
       display: flex;
       flex-direction: row;
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      overflow: hidden;
+      border: none;
       width: 100%;
       flex: 1;
       background-color: var(--bg-color);
+      min-height: 0; /* Important for Firefox flex issues */
     }
 
     .sidebar {
@@ -175,6 +173,8 @@ interface PlainNote {
       flex-direction: column;
       overflow-y: auto;
       background-color: var(--card-bg-color);
+      width: 100%;
+      min-height: 0; /* Important for Firefox flex container */
     }
 
     .action-btn {
@@ -312,8 +312,8 @@ interface PlainNote {
 
     .footer {
       text-align: center;
-      padding: 16px;
-      font-size: 0.875rem;
+      padding: 8px;
+      font-size: 0.75rem;
       color: var(--text-muted-color);
       border-top: 1px solid var(--border-color);
       background-color: var(--bg-color);
