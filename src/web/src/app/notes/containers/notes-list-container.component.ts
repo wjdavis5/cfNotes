@@ -17,6 +17,7 @@ interface PlainNote {
   content: string;
   createdAt: string;
   updatedAt: string;
+  decryptionError?: boolean; // Flag for notes that failed to decrypt
 }
 
 @Component({
@@ -40,16 +41,6 @@ interface PlainNote {
             New Note
           </button>
 
-          <!-- Fix Notes Button (for migration) -->
-          <button
-            *ngIf="showFixButton"
-            class="action-btn fix-notes-btn"
-            (click)="fixNotes()"
-            [disabled]="isFixingNotes"
-          >
-            {{ isFixingNotes ? 'Fixing Notes...' : 'Fix Encryption' }}
-          </button>
-
           <!-- Loading State -->
           <div *ngIf="loading" class="loading">
             <span>Loading notes...</span>
@@ -64,6 +55,7 @@ interface PlainNote {
           <div *ngIf="!loading && !error && notes.length > 0" class="notes-list">
             <div *ngFor="let note of notes"
                  class="note-item"
+                 [class.error-note]="note.decryptionError"
                  (click)="viewNote(note.id)"
                  (keydown.enter)="viewNote(note.id)"
                  (keydown.space)="viewNote(note.id)"
@@ -71,8 +63,20 @@ interface PlainNote {
                  role="button"
                  [attr.aria-label]="'View note: ' + (note.title || 'Untitled Note')"
             >
-              <p class="note-title">{{ note.title || 'Untitled Note' }}</p>
-              <p class="note-date">{{ formatDate(note.updatedAt) }}</p>
+              <div class="note-content">
+                <p class="note-title">{{ note.title || 'Untitled Note' }}</p>
+                <p *ngIf="!note.decryptionError" class="note-date">{{ formatDate(note.updatedAt) }}</p>
+                <p *ngIf="note.decryptionError" class="note-error">This note could not be decrypted</p>
+              </div>
+              <button
+                class="delete-icon"
+                (click)="confirmDeleteNote(note.id, $event)"
+                aria-label="Delete note"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="icon">
+                  <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Z" clip-rule="evenodd" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -227,6 +231,9 @@ interface PlainNote {
       transition: all 0.2s ease;
       border: 1px solid var(--border-color);
       background-color: var(--card-bg-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .note-item:hover {
@@ -311,6 +318,47 @@ interface PlainNote {
       border-top: 1px solid var(--border-color);
       background-color: var(--bg-color);
     }
+
+    .note-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .delete-icon {
+      background: none;
+      border: none;
+      padding: 8px;
+      margin-left: 8px;
+      cursor: pointer;
+      opacity: 0.6;
+      border-radius: 4px;
+      color: var(--error-color);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delete-icon:hover {
+      opacity: 1;
+      background-color: rgba(var(--error-color-rgb), 0.1);
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .error-note {
+      border-left: 4px solid var(--error-color);
+    }
+
+    .note-error {
+      color: var(--error-color);
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
   `
 })
 export class NotesListContainerComponent implements OnInit, OnDestroy {
@@ -332,10 +380,6 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   private noteChangeSubject = new Subject<PlainNote>();
   private saveSubscription: Subscription | null = null;
   private themeSubscription: Subscription | null = null;
-
-  // For legacy notes migration
-  showFixButton = false;
-  isFixingNotes = false;
 
   ngOnInit(): void {
     // Subscribe to theme changes
@@ -385,7 +429,7 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     window.history.replaceState({}, '', url);
   }
 
-  async loadNotes(): Promise<void> {
+  private async loadNotes(): Promise<void> {
     this.loading = true;
     this.error = null;
 
@@ -404,29 +448,49 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       }
 
       // Load encrypted notes
-      const encryptedNotes = await this.noteService.loadNotes();
+      await this.noteService.loadNotes();
+      const encryptedNotes = this.noteService.getNotes();
 
-      // Decrypt notes
+      // Decrypt notes - handling individual decryption failures
       const decryptedNotes: PlainNote[] = [];
-      const failedNoteIds: string[] = [];
 
       for (const note of encryptedNotes) {
         try {
           const decryptedNote = await this.cryptoService.decryptNote(note);
           decryptedNotes.push(decryptedNote);
         } catch (error) {
-          console.error(`Failed to decrypt note ${note.id}:`, error);
-          failedNoteIds.push(note.id);
+          console.error(`Decryption error for note ${note.id}:`, error);
+          // Create an error placeholder for notes that failed to decrypt
+          decryptedNotes.push({
+            id: note.id,
+            title: 'Decryption Failed',
+            content: '',
+            createdAt: note.createdAt || new Date().toISOString(),
+            updatedAt: note.updatedAt || new Date().toISOString(),
+            decryptionError: true
+          });
         }
       }
 
-      // Sort notes by updated date
-      this.notes = decryptedNotes.sort((a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
+      // Sort notes by updatedAt
+      this.notes = decryptedNotes.sort((a, b) => {
+        const dateA = new Date(a.updatedAt).getTime();
+        const dateB = new Date(b.updatedAt).getTime();
+        return dateB - dateA; // Descending
+      });
 
-      // Show fix button if any notes failed to decrypt
-      this.showFixButton = failedNoteIds.length > 0;
+      // Update current note if we have a selected note ID
+      if (this.selectedNoteId) {
+        const selectedNote = this.notes.find(
+          note => note.id === this.selectedNoteId
+        );
+        this.currentNote = selectedNote || null;
+
+        // Don't load notes with decryption errors in the editor
+        if (this.currentNote?.decryptionError) {
+          this.currentNote = null;
+        }
+      }
     } catch (error) {
       console.error('Error loading notes:', error);
       this.error = 'Failed to load notes. Please try again.';
@@ -460,6 +524,14 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   }
 
   viewNote(noteId: string): void {
+    // Find the note
+    const note = this.notes.find(n => n.id === noteId);
+
+    // Don't navigate to notes with decryption errors
+    if (note?.decryptionError) {
+      return;
+    }
+
     this.router.navigate(['/notes', noteId]);
   }
 
@@ -583,7 +655,8 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     this.saveNoteToServer(note);
   }
 
-  confirmDeleteNote(noteId: string): void {
+  confirmDeleteNote(noteId: string, event: Event): void {
+    event.stopPropagation();
     if (confirm('Are you sure you want to delete this note?')) {
       this.deleteNote(noteId);
     }
@@ -604,26 +677,6 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error deleting note:', error);
       this.error = 'Failed to delete note. Please try again.';
-    }
-  }
-
-  async fixNotes(): Promise<void> {
-    this.isFixingNotes = true;
-
-    try {
-      const result = await this.noteService.fixNotes();
-      console.log('Fix notes result:', result);
-
-      // Reload notes after fixing
-      await this.loadNotes();
-
-      // Hide fix button
-      this.showFixButton = false;
-    } catch (error) {
-      console.error('Error fixing notes:', error);
-      this.error = 'Failed to fix notes. Please try again.';
-    } finally {
-      this.isFixingNotes = false;
     }
   }
 }
