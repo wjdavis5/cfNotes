@@ -95,6 +95,17 @@ interface PlainNote {
               <h2 class="welcome-header">Welcome to cfNote</h2>
               <p class="welcome-text">Select a note or create a new one to get started</p>
 
+              <div class="security-info">
+                <h3 class="security-header">How Your Data Stays Private</h3>
+                <ul class="security-list">
+                  <li><strong>Zero-knowledge privacy:</strong> Your email address is never stored directly - we only use a secure hash of your email for authentication and to associate your notes.</li>
+                  <li><strong>End-to-end encryption:</strong> All notes are encrypted with AES-256 in your browser before being stored. Only you can decrypt them with your password.</li>
+                  <li><strong>Secure key management:</strong> Your password never leaves your device and is used to generate encryption keys.</li>
+                  <li><strong>Cloudflare KV storage:</strong> Encrypted notes are stored in Cloudflare's global key-value storage, linked only to your email's hash, not your actual email.</li>
+                  <li><strong>No plaintext content:</strong> Note titles, content, and metadata are all encrypted - we have zero access to your information.</li>
+                </ul>
+              </div>
+
               <button
                 *ngIf="notes.length === 0"
                 class="action-btn create-first-btn"
@@ -358,6 +369,46 @@ interface PlainNote {
       color: var(--error-color);
       font-size: 0.75rem;
       margin-top: 4px;
+    }
+
+    .security-info {
+      margin: 24px 0;
+      padding: 16px;
+      border-radius: 8px;
+      background-color: rgba(var(--accent-color-rgb), 0.1);
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    .security-header {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent-color);
+    }
+
+    .security-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .security-list li {
+      margin-bottom: 12px;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .security-list li:before {
+      content: '✓';
+      color: var(--accent-color);
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    .security-list li:last-child {
+      margin-bottom: 0;
     }
   `
 })
