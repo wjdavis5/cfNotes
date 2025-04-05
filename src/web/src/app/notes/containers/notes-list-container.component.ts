@@ -56,6 +56,7 @@ interface PlainNote {
             <div *ngFor="let note of notes"
                  class="note-item"
                  [class.error-note]="note.decryptionError"
+                 [class.active-note]="isActiveNote(note.id)"
                  (click)="viewNote(note.id)"
                  (keydown.enter)="viewNote(note.id)"
                  (keydown.space)="viewNote(note.id)"
@@ -410,6 +411,11 @@ interface PlainNote {
     .security-list li:last-child {
       margin-bottom: 0;
     }
+
+    .active-note {
+      border-left: 3px solid var(--accent-color);
+      background-color: var(--hover-color);
+    }
   `
 })
 export class NotesListContainerComponent implements OnInit, OnDestroy {
@@ -426,11 +432,13 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
   currentTheme = Theme.LIGHT;
   selectedNoteId: string | null = null;
   currentNote: PlainNote | null = null;
+  activeNoteId: string | null = null;
 
   // For autosave functionality
   private noteChangeSubject = new Subject<PlainNote>();
   private saveSubscription: Subscription | null = null;
   private themeSubscription: Subscription | null = null;
+  private routeSubscription: Subscription | null = null;
 
   ngOnInit(): void {
     // Subscribe to theme changes
@@ -438,7 +446,19 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       this.currentTheme = theme;
     });
 
-    // Load notes on init
+    // Watch for route changes to highlight active note
+    const parentRoute = this.route.parent || this.route;
+    this.routeSubscription = parentRoute.paramMap.subscribe(params => {
+      const noteId = params.get('id');
+      this.activeNoteId = noteId;
+
+      // If we're navigating back to the notes list (no noteId), reload notes
+      if (!noteId) {
+        this.loadNotes();
+      }
+    });
+
+    // Initial load of notes
     this.loadNotes();
 
     // Watch URL for note ID
@@ -468,6 +488,10 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
 
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
+    }
+
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
     }
   }
 
@@ -729,5 +753,10 @@ export class NotesListContainerComponent implements OnInit, OnDestroy {
       console.error('Error deleting note:', error);
       this.error = 'Failed to delete note. Please try again.';
     }
+  }
+
+  // Check if a note is the active one
+  isActiveNote(noteId: string): boolean {
+    return this.activeNoteId === noteId;
   }
 }

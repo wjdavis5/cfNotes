@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, of, tap, lastValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
+import { ToastService } from './toast.service';
 
 // Temporary interfaces until properly set up with Nx
 interface Note {
@@ -33,6 +34,7 @@ interface NotesResponse {
 export class NoteService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   private readonly API_URL = '/api/notes';
 
@@ -54,20 +56,25 @@ export class NoteService {
     }
 
     try {
+      this.toastService.info('Loading notes...');
+
       const url = `${this.API_URL}/${user.emailHash}`;
       const response = await lastValueFrom(
         this.http.get<NotesResponse>(url).pipe(
           catchError(error => {
             console.error('Error loading notes:', error);
+            this.toastService.error('Failed to load notes');
             return of({ notes: [] });
           })
         )
       );
 
       this.notesSubject.next(response.notes);
+      this.toastService.success(`Loaded ${response.notes.length} notes`);
       return response.notes;
     } catch (error) {
       console.error('Error loading notes:', error);
+      this.toastService.error('Failed to load notes');
       return [];
     }
   }
@@ -82,17 +89,27 @@ export class NoteService {
     }
 
     try {
+      this.toastService.info('Loading note...');
+
       const url = `${this.API_URL}/${user.emailHash}/${noteId}`;
-      return await lastValueFrom(
+      const note = await lastValueFrom(
         this.http.get<Note>(url).pipe(
           catchError(error => {
             console.error('Error getting note:', error);
+            this.toastService.error('Failed to load note');
             return of(null);
           })
         )
       );
+
+      if (note) {
+        this.toastService.success('Note loaded');
+      }
+
+      return note;
     } catch (error) {
       console.error('Error getting note:', error);
+      this.toastService.error('Failed to load note');
       return null;
     }
   }
@@ -107,11 +124,14 @@ export class NoteService {
     }
 
     try {
+      this.toastService.info('Creating new note...');
+
       const url = `${this.API_URL}/${user.emailHash}`;
       const response = await lastValueFrom(
         this.http.post<{ success: boolean; note: Note }>(url, note).pipe(
           catchError(error => {
             console.error('Error creating note:', error);
+            this.toastService.error('Failed to create note');
             return of({ success: false, note: null as unknown as Note });
           })
         )
@@ -121,12 +141,14 @@ export class NoteService {
         // Update state with new note
         const currentNotes = this.notesSubject.value;
         this.notesSubject.next([...currentNotes, response.note]);
+        this.toastService.success('Note created');
         return response.note;
       }
 
       return null;
     } catch (error) {
       console.error('Error creating note:', error);
+      this.toastService.error('Failed to create note');
       return null;
     }
   }
@@ -141,11 +163,14 @@ export class NoteService {
     }
 
     try {
+      this.toastService.info('Saving note...');
+
       const url = `${this.API_URL}/${user.emailHash}/${noteId}`;
       const response = await lastValueFrom(
         this.http.put<{ success: boolean; note: Note }>(url, updatedNote).pipe(
           catchError(error => {
             console.error('Error updating note:', error);
+            this.toastService.error('Failed to save note');
             return of({ success: false, note: null as unknown as Note });
           })
         )
@@ -158,12 +183,22 @@ export class NoteService {
           note.id === noteId ? response.note : note
         );
         this.notesSubject.next(updatedNotes);
+
+        // If this is the current note being edited, update it as well
+        const currentNote = this.currentNoteSubject.value;
+        if (currentNote && currentNote.id === noteId) {
+          // We'll need to decrypt the updated note to update the current note subject
+          // This happens in the detail component when it loads the note
+        }
+
+        this.toastService.success('Note saved');
         return response.note;
       }
 
       return null;
     } catch (error) {
       console.error('Error updating note:', error);
+      this.toastService.error('Failed to save note');
       return null;
     }
   }
@@ -178,11 +213,14 @@ export class NoteService {
     }
 
     try {
+      this.toastService.info('Deleting note...');
+
       const url = `${this.API_URL}/${user.emailHash}/${noteId}`;
       const response = await lastValueFrom(
         this.http.delete<{ success: boolean }>(url).pipe(
           catchError(error => {
             console.error('Error deleting note:', error);
+            this.toastService.error('Failed to delete note');
             return of({ success: false });
           })
         )
@@ -200,12 +238,14 @@ export class NoteService {
           this.currentNoteSubject.next(null);
         }
 
+        this.toastService.success('Note deleted');
         return true;
       }
 
       return false;
     } catch (error) {
       console.error('Error deleting note:', error);
+      this.toastService.error('Failed to delete note');
       return false;
     }
   }
@@ -250,6 +290,8 @@ export class NoteService {
         throw new Error('User not authenticated');
       }
 
+      this.toastService.info('Fixing notes metadata...');
+
       const response = await lastValueFrom(
         this.http
           .post<{
@@ -267,14 +309,18 @@ export class NoteService {
           .pipe(
             catchError((error) => {
               console.error('Error fixing notes:', error);
+              this.toastService.error('Failed to fix notes');
               throw new Error('Failed to fix notes');
             })
           )
       );
 
       if (!response.success) {
+        this.toastService.error('Failed to fix notes');
         throw new Error('Failed to fix notes');
       }
+
+      this.toastService.success(`Fixed ${response.stats.fixed} of ${response.stats.total} notes`);
 
       return {
         stats: response.stats,
@@ -282,7 +328,15 @@ export class NoteService {
       };
     } catch (error) {
       console.error('Error in fixNotes:', error);
+      this.toastService.error('Error fixing notes');
       throw error;
     }
+  }
+
+  /**
+   * Get current note
+   */
+  getCurrentNote(): PlainNote | null {
+    return this.currentNoteSubject.value;
   }
 }

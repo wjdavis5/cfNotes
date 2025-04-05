@@ -4,10 +4,11 @@ import { SessionTimeoutDialogComponent } from './components/session-timeout-dial
 import { CryptoService, SecureMode } from './services/crypto.service';
 import { AuthService } from './services/auth.service';
 import { EnvironmentService } from './services/environment.service';
+import { ToastComponent } from './components/toast.component';
 
 @Component({
   standalone: true,
-  imports: [RouterOutlet, SessionTimeoutDialogComponent],
+  imports: [RouterOutlet, SessionTimeoutDialogComponent, ToastComponent],
   selector: 'app-root',
   template: `
     <router-outlet></router-outlet>
@@ -22,6 +23,9 @@ import { EnvironmentService } from './services/environment.service';
       (close)="closeDialog()"
       (cancel)="handleCancel()"
     ></app-session-timeout-dialog>
+
+    <!-- Toast notifications -->
+    <app-toast></app-toast>
   `,
 })
 export class AppComponent implements OnInit, OnDestroy {

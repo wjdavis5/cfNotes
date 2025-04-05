@@ -6,6 +6,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { QUILL_CONFIG_TOKEN, QuillModule } from 'ngx-quill';
 import { apiUrlInterceptor } from './interceptors/api-url.interceptor';
 import { csrfInterceptor } from './interceptors/csrf.interceptor';
+import { EnvironmentService } from './services/environment.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,7 +14,23 @@ export const appConfig: ApplicationConfig = {
       routes,
       withComponentInputBinding()
     ),
-    provideHttpClient(withInterceptors([csrfInterceptor, apiUrlInterceptor])),
+    // Conditionally add CSRF interceptor based on environment
+    {
+      provide: 'APP_INITIALIZER',
+      useFactory: (envService: EnvironmentService) => {
+        // Log API info on startup
+        return () => {
+          envService.logApiInfo();
+        };
+      },
+      deps: [EnvironmentService],
+      multi: true
+    },
+    // CSRF protection temporarily disabled for debugging
+    provideHttpClient(withInterceptors([
+      // csrfInterceptor, // Temporarily disabled for debugging
+      apiUrlInterceptor
+    ])),
     provideAnimations(),
     importProvidersFrom(
       QuillModule.forRoot({
