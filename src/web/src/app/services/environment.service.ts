@@ -12,8 +12,8 @@ import { Injectable } from '@angular/core';
 export class EnvironmentService {
   // Cloudflare production API URLs (without trailing slash)
   private readonly PROD_API_URLS = [
-    'https://cfnote-api.wjd5.workers.dev',  // Primary API endpoint
-    'https://cfnote.wjd.io/api'             // Alternative API endpoint
+    'https://cfnote-api.wjd5.workers.dev',  // Primary API endpoint (dedicated API domain)
+    'https://cfnote.wjd.io'                 // Alternative API endpoint (same domain as frontend)
   ];
 
   // Development API URL (without trailing slash)
