@@ -3,6 +3,8 @@ import { cors } from 'hono/cors';
 import notesRoutes from './routes/notes';
 import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error-handler';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
 
 // Define environment interface
 interface Env {
@@ -36,11 +38,61 @@ app.use('*', cors({
   maxAge: 86400,
 }));
 
+// Add debugging middleware to log all requests
+app.use('*', async (c, next) => {
+  console.log(`${c.req.method} ${c.req.url}`);
+  await next();
+});
+
 app.use('*', errorHandler());
 
-// Mount routes
+// Mount notes routes
 app.route('/api/notes', notesRoutes);
-app.route('/api/auth', authRoutes);
+
+// Instead of mounting auth routes, define the authentication directly in the main app
+// Validation schema for user authentication
+const authSchema = z.object({
+  emailHash: z.string().min(10),
+  authHash: z.string().min(10),
+});
+
+// Define the authentication handler directly on the main app
+app.post('/api/auth', zValidator('json', authSchema), async (c) => {
+  console.log('Auth endpoint called directly');
+
+  try {
+    const { emailHash, authHash } = await c.req.json();
+
+    // Debug log
+    console.log(`Authentication attempt for hash: ${emailHash.substring(0, 10)}...`);
+
+    // Check if user exists in KV store
+    const userExists = await c.env.NOTES.get(`user:${emailHash}`);
+
+    if (!userExists) {
+      // First time user - create an entry
+      console.log('New user - creating entry');
+      await c.env.NOTES.put(`user:${emailHash}`, JSON.stringify({
+        created: new Date().toISOString(),
+      }));
+    } else {
+      console.log('Existing user authenticated');
+    }
+
+    return c.json({
+      status: 'success',
+      authenticated: true,
+      isNewUser: !userExists
+    });
+  } catch (error) {
+    console.error('Auth error:', error);
+    return c.json({
+      status: 'error',
+      message: 'Authentication failed',
+      error: String(error)
+    }, 500);
+  }
+});
 
 // Root endpoint for health check
 app.get('/', (c) => {
