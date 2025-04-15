@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import notesRoutes from './routes/notes';
-import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error-handler';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
@@ -40,7 +39,7 @@ app.use('*', cors({
 
 // Add debugging middleware to log all requests
 app.use('*', async (c, next) => {
-  console.log(`${c.req.method} ${c.req.url}`);
+  console.log(`${c.req.method} ${c.req.url} - HTTP/${c.req.raw.headers.get('host')}`);
   await next();
 });
 
@@ -48,18 +47,30 @@ app.use('*', errorHandler());
 
 // Mount notes routes
 app.route('/api/notes', notesRoutes);
+// Also mount at /notes for direct worker domain access
+app.route('/notes', notesRoutes);
 
-// Instead of mounting auth routes, define the authentication directly in the main app
 // Validation schema for user authentication
 const authSchema = z.object({
   emailHash: z.string().min(10),
   authHash: z.string().min(10),
 });
 
-// Define the authentication handler directly on the main app
+// Authentication handlers for different path patterns
+// Handle requests to /api/auth (typically from frontend)
 app.post('/api/auth', zValidator('json', authSchema), async (c) => {
-  console.log('Auth endpoint called directly');
+  console.log('Auth endpoint called at /api/auth');
+  return handleAuth(c);
+});
 
+// Also handle direct requests to /auth (when worker is at root path)
+app.post('/auth', zValidator('json', authSchema), async (c) => {
+  console.log('Auth endpoint called at /auth');
+  return handleAuth(c);
+});
+
+// Shared authentication logic
+async function handleAuth(c: { env: Env; req: { json: () => Promise<any> }; json: (body: any, status?: number) => any }) {
   try {
     const { emailHash, authHash } = await c.req.json();
 
@@ -92,14 +103,15 @@ app.post('/api/auth', zValidator('json', authSchema), async (c) => {
       error: String(error)
     }, 500);
   }
-});
+}
 
 // Root endpoint for health check
 app.get('/', (c) => {
   return c.json({
     status: 'ok',
     message: 'cfNote API is running',
-    env: isDev() ? 'development' : 'production'
+    env: isDev() ? 'development' : 'production',
+    version: '1.1.0'
   });
 });
 

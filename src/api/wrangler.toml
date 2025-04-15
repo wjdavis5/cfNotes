@@ -14,3 +14,6 @@ port = 8787
 
 [site]
 bucket = "./dist"
+
+[observability.logs]
+enabled = true
